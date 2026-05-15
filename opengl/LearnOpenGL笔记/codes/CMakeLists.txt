@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(learn_opengl_practice)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(glad STATIC)
 target_sources(glad

@@ -1,1 +1,80 @@
+# =========================
+# Build directories
+# =========================
+
 build/
+build-*/
+cmake-build-*/
+out/
+out-*/
+
+# =========================
+# CMake
+# =========================
+
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+
+# Ninja
+.ninja_deps
+.ninja_log
+build.ninja
+
+# Makefile generators
+Makefile
+
+# =========================
+# IDE / Editor
+# =========================
+
+# VSCode / Cursor
+.vscode/*
+
+# Keep shared workspace settings if desired
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# clangd
+.clangd
+.cache/
+clangd/
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+# Binaries
+# =========================
+
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+
+# =========================
+# Debug symbols / profiling
+# =========================
+
+*.pdb
+*.dSYM/
+*.profraw
+*.profdata
+
+# =========================
+# Logs
+# =========================
+
+*.log
