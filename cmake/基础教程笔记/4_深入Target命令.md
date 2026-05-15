@@ -1,6 +1,6 @@
 # 深入 Target 命令
 
-Target 命令，即操作 Target 属性的相关命令。
+> Target 命令，即操作 Target 属性的相关命令。
 
 ## 常用的 Target 命令
 
