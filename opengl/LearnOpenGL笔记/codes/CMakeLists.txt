@@ -4,12 +4,14 @@ project(learn_opengl_practice)
 add_library(glad STATIC)
 target_sources(glad
     PRIVATE
-        glad/src/glad.c
+        third_party/glad/src/glad.c
     PUBLIC
         FILE_SET HEADERS
-	BASE_DIRS glad/include/
+	BASE_DIRS third_party/glad/include/
 	FILES
-            glad/include/glad/glad.h
+            third_party/glad/include/glad/glad.h
 )
 
-add_subdirectory(基础环境搭建)
+add_subdirectory(third_party/glfw-3.4)
+add_subdirectory(0_基础环境搭建)
+add_subdirectory(1_窗口与上下文创建)
