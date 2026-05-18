@@ -13,5 +13,5 @@ target_sources(glad
 )
 
 add_subdirectory(third_party/glfw-3.4)
-add_subdirectory(0_基础环境搭建)
-add_subdirectory(1_窗口与上下文创建)
+add_subdirectory(00_基础环境搭建)
+add_subdirectory(01_基本框架)
