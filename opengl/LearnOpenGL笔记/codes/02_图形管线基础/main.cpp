@@ -226,13 +226,13 @@ int main()
             std::this_thread::sleep_for(frame_duration - elapsed);
         last_time = steady_clock::now();
     }
+    glDeleteVertexArrays(1, &lVAO);
     glDeleteBuffers(1, &lVBO);
     glDeleteBuffers(1, &lEBO);
-    glDeleteVertexArrays(1, &lVAO);
 
+    glDeleteVertexArrays(1, &rVAO);
     glDeleteBuffers(1, &rVBO);
     glDeleteBuffers(1, &rEBO);
-    glDeleteVertexArrays(1, &rVAO);
 
     glDeleteProgram(shaderProgram);
     glfwTerminate();
