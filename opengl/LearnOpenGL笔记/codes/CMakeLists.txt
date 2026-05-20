@@ -15,3 +15,4 @@ target_sources(glad
 add_subdirectory(third_party/glfw-3.4)
 add_subdirectory(00_基础环境搭建)
 add_subdirectory(01_基本框架)
+add_subdirectory(02_图形管线基础)
