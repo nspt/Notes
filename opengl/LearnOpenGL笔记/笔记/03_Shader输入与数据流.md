@@ -39,6 +39,12 @@ vec4 otherResult = vec4(result.xyz, 1.0);
 
 Shader 本身是相对独立的程序，通过输入与输出和图形管线中的其他流程进行数据交互。比较特殊的是 Vertex Shader，其输入来自于 Vertex Attribute，而不是另一个 Shader。
 
+> OpenGL 保证至少支持 16 个 4 元顶点属性，如果要查询当前环境具体支持的顶点属性数，可以通过 `glGetIntergv()` + `GL_MAX_VETEX_ATTRIBS` 查询：
+> ```cpp
+> int nrAttributes;
+> glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+> ```
+
 Shader 通过关键字 `in` 和 `out` 定义输入与输出变量，若上游 Shader 定义的输出变量与下游 Shader 定义的输入变量的类型和名称都一样，则该数据从上游 Shader 传递给下游 Shader。此连接在链接 Shader Program 时完成。
 
 对于 Vertex Shader 的输入属性，如果未使用 `layout(location = ...)` 显式指定 location，可以在 Shader Program 链接后，通过 `glGetAttribLocation()` 查询其 location。
