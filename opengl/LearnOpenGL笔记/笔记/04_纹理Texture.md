@@ -217,3 +217,7 @@ CPU 端创建 texture object，并把图像数据和采样参数上传进去。
 Shader 中的 sampler uniform 保存 texture unit 编号。
 
 当 Fragment Shader 调用 `texture(sampler, texCoord)` 时，GPU 会根据 sampler 找到对应的 texture unit，再找到绑定的 texture object，并按 wrap/filter/mipmap 等规则完成采样。
+
+$$
+|\vec{v} \cdot p'|
+$$
