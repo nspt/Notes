@@ -15,7 +15,8 @@ Transformation 的核心作用，是把“模型本身长什么样”和“模�
 $$
 列向量：
 \bar{v} = \begin{pmatrix} {\color{red}x} \\ {\color{green}y} \\ {\color{blue}z} \end{pmatrix}
-\\
+$$
+$$
 行向量：
 \bar{v} = \begin{pmatrix} {\color{red}x} & {\color{green}y} & {\color{blue}z} \end{pmatrix}
 $$
@@ -34,13 +35,7 @@ $$
 
 $$
 乘除：
-{\color{purple} c} \cdot
-\begin{pmatrix}
-{\color{red} x} \\ {\color{green} y} \\ {\color{blue} z}
-\end{pmatrix}
-=
-\begin{pmatrix}
-{\color{purple} c} \cdot {\color{red} x} \\ {\color{purple} c} \cdot {\color{green} y} \\ {\color{purple} c} \cdot {\color{blue} z}
+{\color{purple} c} \cdot \begin{pmatrix} {\color{red} x} \\ {\color{green} y} \\ {\color{blue} z} \end{pmatrix} = \begin{pmatrix} {\color{purple} c} \cdot {\color{red} x} \\ {\color{purple} c} \cdot {\color{green} y} \\ {\color{purple} c} \cdot {\color{blue} z}
 \end{pmatrix}
 $$
 
