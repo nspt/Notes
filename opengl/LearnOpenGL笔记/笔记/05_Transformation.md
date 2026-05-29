@@ -98,7 +98,31 @@ $$
 ### 向量与向量的加减法
 
 $$
-\bar{v} = \begin{pmatrix} {\color{red}1} \\ {\color{green}2} \\ {\color{blue}3} \end{pmatrix}, \bar{k} = \begin{pmatrix} {\color{red}4} \\ {\color{green}5} \\ {\color{blue}6} \end{pmatrix} \rightarrow \bar{v} + \bar{k} = \begin{pmatrix} {\color{red}1} + {\color{red}4} \\ {\color{green}2} + {\color{green}5} \\ {\color{blue}3} + {\color{blue}6} \end{pmatrix} = \begin{pmatrix} {\color{red}5} \\ {\color{green}7} \\ {\color{blue}9} \end{pmatrix}
+\bar{v} =
+\begin{pmatrix}
+{\color{red}1} \\
+{\color{green}2} \\
+{\color{blue}3}
+\end{pmatrix},
+\bar{k} =
+\begin{pmatrix}
+{\color{red}4} \\
+{\color{green}5} \\
+{\color{blue}6}
+\end{pmatrix}
+\rightarrow
+\bar{v} + \bar{k} =
+\begin{pmatrix}
+{\color{red}1} + {\color{red}4} \\
+{\color{green}2} + {\color{green}5} \\
+{\color{blue}3} + {\color{blue}6}
+\end{pmatrix}
+=
+\begin{pmatrix}
+{\color{red}5} \\
+{\color{green}7} \\
+{\color{blue}9}
+\end{pmatrix}
 $$
 
 ![Vectors Addition](images/vectors_addition.png)
@@ -146,7 +170,23 @@ $$
 在三维空间中，两个向量的叉乘结果是一个与二者都垂直（正交，*orthogonal*）的向量。当两个向量平行或其中一个为零向量时，叉乘结果为零向量，此时没有明确的方向。非平行情况下，结果向量的长度表示这两个向量张成的平行四边形面积，其方向可以表示两个向量的旋转/朝向关系：
 
 $$
-\begin{pmatrix} {\color{red}{A_{x}}} \\ {\color{green}{A_{y}}} \\ {\color{blue}{A_{z}}} \end{pmatrix} \times \begin{pmatrix} {\color{red}{B_{x}}} \\ {\color{green}{B_{y}}} \\ {\color{blue}{B_{z}}}  \end{pmatrix} = \begin{pmatrix} {\color{green}{A_{y}}} \cdot {\color{blue}{B_{z}}} - {\color{blue}{A_{z}}} \cdot {\color{green}{B_{y}}} \\ {\color{blue}{A_{z}}} \cdot {\color{red}{B_{x}}} - {\color{red}{A_{x}}} \cdot {\color{blue}{B_{z}}} \\ {\color{red}{A_{x}}} \cdot {\color{green}{B_{y}}} - {\color{green}{A_{y}}} \cdot {\color{red}{B_{x}}} \end{pmatrix}
+\begin{pmatrix}
+{\color{red}{A_{x}}} \\
+{\color{green}{A_{y}}} \\
+{\color{blue}{A_{z}}}
+\end{pmatrix}
+\times
+\begin{pmatrix}
+{\color{red}{B_{x}}} \\
+{\color{green}{B_{y}}} \\
+{\color{blue}{B_{z}}}
+\end{pmatrix}
+=
+\begin{pmatrix}
+{\color{green}{A_{y}}} \cdot {\color{blue}{B_{z}}} - {\color{blue}{A_{z}}} \cdot {\color{green}{B_{y}}} \\
+{\color{blue}{A_{z}}} \cdot {\color{red}{B_{x}}} - {\color{red}{A_{x}}} \cdot {\color{blue}{B_{z}}} \\
+{\color{red}{A_{x}}} \cdot {\color{green}{B_{y}}} - {\color{green}{A_{y}}} \cdot {\color{red}{B_{x}}}
+\end{pmatrix}
 $$
 
 ![Vectors Cross Product](images/vectors_crossproduct.png)
@@ -160,17 +200,68 @@ $$
 只有维度相同的矩阵可以进行加减法：
 
 $$
-\begin{bmatrix} {\color{red}1} & {\color{red}2} \\ {\color{green}3} & {\color{green}4} \end{bmatrix} + \begin{bmatrix} {\color{red}5} & {\color{red}6} \\ {\color{green}7} & {\color{green}8} \end{bmatrix} = \begin{bmatrix} {\color{red}1} + {\color{red}5} & {\color{red}2} + {\color{red}6} \\ {\color{green}3} + {\color{green}7} & {\color{green}4} + {\color{green}8} \end{bmatrix} = \begin{bmatrix} {\color{red}6} & {\color{red}8} \\ {\color{green}{10}} & {\color{green}{12}} \end{bmatrix}
+\begin{bmatrix}
+{\color{red}1} & {\color{red}2} \\
+{\color{green}3} & {\color{green}4}
+\end{bmatrix}
++
+\begin{bmatrix}
+{\color{red}5} & {\color{red}6} \\
+{\color{green}7} & {\color{green}8}
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}1} + {\color{red}5} & {\color{red}2} + {\color{red}6} \\
+{\color{green}3} + {\color{green}7} & {\color{green}4} + {\color{green}8}
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}6} & {\color{red}8} \\
+{\color{green}{10}} & {\color{green}{12}}
+\end{bmatrix}
 $$
 
 $$
-\begin{bmatrix} {\color{red}4} & {\color{red}2} \\ {\color{green}1} & {\color{green}6} \end{bmatrix} - \begin{bmatrix} {\color{red}2} & {\color{red}4} \\ {\color{green}0} & {\color{green}1} \end{bmatrix} = \begin{bmatrix} {\color{red}4} - {\color{red}2} & {\color{red}2}  - {\color{red}4} \\ {\color{green}1} - {\color{green}0} & {\color{green}6} - {\color{green}1} \end{bmatrix} = \begin{bmatrix} {\color{red}2} & -{\color{red}2} \\ {\color{green}1} & {\color{green}5} \end{bmatrix}
+\begin{bmatrix}
+{\color{red}4} & {\color{red}2} \\
+{\color{green}1} & {\color{green}6}
+\end{bmatrix}
+-
+\begin{bmatrix}
+{\color{red}2} & {\color{red}4} \\
+{\color{green}0} & {\color{green}1}
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}4} - {\color{red}2} & {\color{red}2} - {\color{red}4} \\
+{\color{green}1} - {\color{green}0} & {\color{green}6} - {\color{green}1}
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}2} & -{\color{red}2} \\
+{\color{green}1} & {\color{green}5}
+\end{bmatrix}
 $$
 
 ### 矩阵与标量的乘法
 
 $$
-{\color{green}2} \cdot \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix} = \begin{bmatrix} {\color{green}2} \cdot 1 & {\color{green}2} \cdot 2 \\ {\color{green}2} \cdot 3 & {\color{green}2} \cdot 4 \end{bmatrix} = \begin{bmatrix} 2 & 4 \\ 6 & 8 \end{bmatrix}
+{\color{green}2}
+\cdot
+\begin{bmatrix}
+1 & 2 \\
+3 & 4
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{green}2} \cdot 1 & {\color{green}2} \cdot 2 \\
+{\color{green}2} \cdot 3 & {\color{green}2} \cdot 4
+\end{bmatrix}
+=
+\begin{bmatrix}
+2 & 4 \\
+6 & 8
+\end{bmatrix}
 $$
 
 ### 矩阵与矩阵的乘法
@@ -182,12 +273,57 @@ $$
 矩阵乘法的运算规则是：左矩阵的每一行分别与右矩阵的每一列做点乘，得到结果矩阵中对应位置的元素。例如结果矩阵里的第 i 行第 j 列元素，就是：结果[i][j] = 左矩阵第 i 行 · 右矩阵第 j 列
 
 $$
-\begin{bmatrix} {\color{red}1} & {\color{red}2} \\ {\color{green}3} & {\color{green}4} \end{bmatrix} \cdot \begin{bmatrix} {\color{blue}5} & {\color{purple}6} \\ {\color{blue}7} & {\color{purple}8} \end{bmatrix} = \begin{bmatrix} {\color{red}1} \cdot {\color{blue}5} + {\color{red}2} \cdot {\color{blue}7} & {\color{red}1} \cdot {\color{purple}6} + {\color{red}2} \cdot {\color{purple}8} \\ {\color{green}3} \cdot {\color{blue}5} + {\color{green}4} \cdot {\color{blue}7} & {\color{green}3} \cdot {\color{purple}6} + {\color{green}4} \cdot {\color{purple}8} \end{bmatrix} = \begin{bmatrix} 19 & 22 \\ 43 & 50 \end{bmatrix}
+\begin{bmatrix}
+{\color{red}1} & {\color{red}2} \\
+{\color{green}3} & {\color{green}4}
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+{\color{blue}5} & {\color{purple}6} \\
+{\color{blue}7} & {\color{purple}8}
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}1} \cdot {\color{blue}5} + {\color{red}2} \cdot {\color{blue}7} & {\color{red}1} \cdot {\color{purple}6} + {\color{red}2} \cdot {\color{purple}8} \\
+{\color{green}3} \cdot {\color{blue}5} + {\color{green}4} \cdot {\color{blue}7} & {\color{green}3} \cdot {\color{purple}6} + {\color{green}4} \cdot {\color{purple}8}
+\end{bmatrix}
+=
+\begin{bmatrix}
+19 & 22 \\
+43 & 50
+\end{bmatrix}
 $$
 
 $$
-\begin{bmatrix} {\color{red}4} & {\color{red}2} & {\color{red}0} \\ {\color{green}0} & {\color{green}8} & {\color{green}1} \\ {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \end{bmatrix} \cdot \begin{bmatrix} {\color{red}4} & {\color{green}2} & {\color{blue}1} \\ {\color{red}2} & {\color{green}0} & {\color{blue}4} \\ {\color{red}9} & {\color{green}4} & {\color{blue}2} \end{bmatrix} = \begin{bmatrix} {\color{red}4} \cdot {\color{red}4} + {\color{red}2} \cdot {\color{red}2} + {\color{red}0} \cdot {\color{red}9} & {\color{red}4} \cdot {\color{green}2} + {\color{red}2} \cdot {\color{green}0} + {\color{red}0} \cdot {\color{green}4} & {\color{red}4} \cdot {\color{blue}1} + {\color{red}2} \cdot {\color{blue}4} + {\color{red}0} \cdot {\color{blue}2} \\ {\color{green}0} \cdot {\color{red}4} + {\color{green}8} \cdot {\color{red}2} + {\color{green}1} \cdot {\color{red}9} & {\color{green}0} \cdot {\color{green}2} + {\color{green}8} \cdot {\color{green}0} + {\color{green}1} \cdot {\color{green}4} & {\color{green}0} \cdot {\color{blue}1} + {\color{green}8} \cdot {\color{blue}4} + {\color{green}1} \cdot {\color{blue}2} \\ {\color{blue}0} \cdot {\color{red}4} + {\color{blue}1} \cdot {\color{red}2} + {\color{blue}0} \cdot {\color{red}9} & {\color{blue}0} \cdot {\color{green}2} + {\color{blue}1} \cdot {\color{green}0} + {\color{blue}0} \cdot {\color{green}4} & {\color{blue}0} \cdot {\color{blue}1} + {\color{blue}1} \cdot {\color{blue}4} + {\color{blue}0} \cdot {\color{blue}2} \end{bmatrix} 
- \\ = \begin{bmatrix} 20 & 8 & 12 \\ 25 & 4 & 34 \\ 2 & 0 & 4 \end{bmatrix}
+\begin{bmatrix}
+{\color{red}4} & {\color{red}2} & {\color{red}0} \\
+{\color{green}0} & {\color{green}8} & {\color{green}1} \\
+{\color{blue}0} & {\color{blue}1} & {\color{blue}0}
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+{\color{red}4} & {\color{green}2} & {\color{blue}1} \\
+{\color{red}2} & {\color{green}0} & {\color{blue}4} \\
+{\color{red}9} & {\color{green}4} & {\color{blue}2}
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}4} \cdot {\color{red}4} + {\color{red}2} \cdot {\color{red}2} + {\color{red}0} \cdot {\color{red}9} &
+{\color{red}4} \cdot {\color{green}2} + {\color{red}2} \cdot {\color{green}0} + {\color{red}0} \cdot {\color{green}4} &
+{\color{red}4} \cdot {\color{blue}1} + {\color{red}2} \cdot {\color{blue}4} + {\color{red}0} \cdot {\color{blue}2} \\
+{\color{green}0} \cdot {\color{red}4} + {\color{green}8} \cdot {\color{red}2} + {\color{green}1} \cdot {\color{red}9} &
+{\color{green}0} \cdot {\color{green}2} + {\color{green}8} \cdot {\color{green}0} + {\color{green}1} \cdot {\color{green}4} &
+{\color{green}0} \cdot {\color{blue}1} + {\color{green}8} \cdot {\color{blue}4} + {\color{green}1} \cdot {\color{blue}2} \\
+{\color{blue}0} \cdot {\color{red}4} + {\color{blue}1} \cdot {\color{red}2} + {\color{blue}0} \cdot {\color{red}9} &
+{\color{blue}0} \cdot {\color{green}2} + {\color{blue}1} \cdot {\color{green}0} + {\color{blue}0} \cdot {\color{green}4} &
+{\color{blue}0} \cdot {\color{blue}1} + {\color{blue}1} \cdot {\color{blue}4} + {\color{blue}0} \cdot {\color{blue}2}
+\end{bmatrix}
+=
+\begin{bmatrix}
+20 & 8 & 12 \\
+25 & 4 & 34 \\
+2 & 0 & 4
+\end{bmatrix}
 $$
 
 ### 矩阵与向量的乘法
@@ -201,13 +337,44 @@ $$
 单位矩阵是对角线（左上角到右下角）元素值均为 1 且其它元素值均为 0 的 NxN 矩阵：
 
 $$
-\begin{bmatrix} {\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\ {\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix}
+\begin{bmatrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
 $$
 
 在 3D 图形学中，通常把三维位置扩展为四维齐次坐标向量，例如将点表示为 (x, y, z, 1)，这样就可以用 4×4 矩阵统一表示平移、旋转、缩放等变换。所以在 OpenGL 中，我们通常使用 4x4 矩阵和四维向量，当使用 4x4 单位矩阵乘以四维列向量时，会发现单位矩阵的特殊性在于它不会产生任何变换：
 
 $$
-\begin{bmatrix} {\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\ {\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} \cdot \begin{bmatrix} 1 \\ 2 \\ 3 \\ 4 \end{bmatrix} = \begin{bmatrix} {\color{red}1} \cdot 1 \\ {\color{green}1} \cdot 2 \\ {\color{blue}1} \cdot 3 \\ {\color{purple}1} \cdot 4 \end{bmatrix} = \begin{bmatrix} 1 \\ 2 \\ 3 \\ 4 \end{bmatrix}
+\begin{bmatrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+1 \\
+2 \\
+3 \\
+4
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}1} \cdot 1 \\
+{\color{green}1} \cdot 2 \\
+{\color{blue}1} \cdot 3 \\
+{\color{purple}1} \cdot 4
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 \\
+2 \\
+3 \\
+4
+\end{bmatrix}
 $$
 
 在构造变换矩阵时，通常先从单位矩阵开始，因为单位矩阵本身不改变向量；随后依次叠加平移、旋转、缩放等变换，最终得到用于顶点变换的组合矩阵。
@@ -217,13 +384,51 @@ $$
 对向量进行缩放时，可以进行均匀缩放（*uniform scale*），即每个分量的缩放比例一致，也可以是非均匀缩放（*non-uniform scale*），即每个分量的缩放比例不一。我们可以构建一个缩放矩阵，令其与向量相乘来实现向量的缩放：
 
 $$
-\begin{bmatrix} {\color{red}{S_1}} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\ {\color{green}0} & {\color{green}{S_2}} & {\color{green}0} & {\color{green}0} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}{S_3}} & {\color{blue}0} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} \cdot \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} {\color{red}{S_1}} \cdot x \\ {\color{green}{S_2}} \cdot y \\ {\color{blue}{S_3}} \cdot z \\ 1 \end{pmatrix}
+\begin{bmatrix}
+{\color{red}{S_1}} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
+{\color{green}0} & {\color{green}{S_2}} & {\color{green}0} & {\color{green}0} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}{S_3}} & {\color{blue}0} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+\cdot
+\begin{pmatrix}
+x \\
+y \\
+z \\
+1
+\end{pmatrix}
+=
+\begin{pmatrix}
+{\color{red}{S_1}} \cdot x \\
+{\color{green}{S_2}} \cdot y \\
+{\color{blue}{S_3}} \cdot z \\
+1
+\end{pmatrix}
 $$
 
 #### 平移
 
 $$
-\begin{bmatrix}  {\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}{T_x}} \\ {\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}{T_y}} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}{T_z}} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} \cdot \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} x + {\color{red}{T_x}} \\ y + {\color{green}{T_y}} \\ z + {\color{blue}{T_z}} \\ 1 \end{pmatrix}
+\begin{bmatrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}{T_x}} \\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}{T_y}} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}{T_z}} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+\cdot
+\begin{pmatrix}
+x \\
+y \\
+z \\
+1
+\end{pmatrix}
+=
+\begin{pmatrix}
+x + {\color{red}{T_x}} \\
+y + {\color{green}{T_y}} \\
+z + {\color{blue}{T_z}} \\
+1
+\end{pmatrix}
 $$
 
 > 齐次坐标通过给三维向量增加 w 分量，使平移和透视投影等操作也能统一用矩阵乘法表示；其中 w = 1 通常表示点，w = 0 通常表示方向向量。
@@ -239,25 +444,96 @@ $$
 绕 X 轴旋转：
 
 $$
-\begin{bmatrix} {\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\ {\color{green}0} & {\color{green}{\cos \theta}} & - {\color{green}{\sin \theta}} & {\color{green}0} \\ {\color{blue}0} & {\color{blue}{\sin \theta}} & {\color{blue}{\cos \theta}} & {\color{blue}0} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} \cdot \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} x \\ {\color{green}{\cos \theta}} \cdot y - {\color{green}{\sin \theta}} \cdot z \\ {\color{blue}{\sin \theta}} \cdot y + {\color{blue}{\cos \theta}} \cdot z \\ 1 \end{pmatrix}
+\begin{bmatrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
+{\color{green}0} & {\color{green}{\cos \theta}} & - {\color{green}{\sin \theta}} & {\color{green}0} \\
+{\color{blue}0} & {\color{blue}{\sin \theta}} & {\color{blue}{\cos \theta}} & {\color{blue}0} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+\cdot
+\begin{pmatrix}
+x \\
+y \\
+z \\
+1
+\end{pmatrix}
+=
+\begin{pmatrix}
+x \\
+{\color{green}{\cos \theta}} \cdot y - {\color{green}{\sin \theta}} \cdot z \\
+{\color{blue}{\sin \theta}} \cdot y + {\color{blue}{\cos \theta}} \cdot z \\
+1
+\end{pmatrix}
 $$
 
 绕 Y 轴旋转：
 
 $$
-\begin{bmatrix} {\color{red}{\cos \theta}} & {\color{red}0} & {\color{red}{\sin \theta}} & {\color{red}0} \\ {\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\ - {\color{blue}{\sin \theta}} & {\color{blue}0} & {\color{blue}{\cos \theta}} & {\color{blue}0} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} \cdot \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} {\color{red}{\cos \theta}} \cdot x + {\color{red}{\sin \theta}} \cdot z \\ y \\ - {\color{blue}{\sin \theta}} \cdot x + {\color{blue}{\cos \theta}} \cdot z \\ 1 \end{pmatrix}
+\begin{bmatrix}
+{\color{red}{\cos \theta}} & {\color{red}0} & {\color{red}{\sin \theta}} & {\color{red}0} \\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\
+- {\color{blue}{\sin \theta}} & {\color{blue}0} & {\color{blue}{\cos \theta}} & {\color{blue}0} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+\cdot
+\begin{pmatrix}
+x \\
+y \\
+z \\
+1
+\end{pmatrix}
+=
+\begin{pmatrix}
+{\color{red}{\cos \theta}} \cdot x + {\color{red}{\sin \theta}} \cdot z \\
+y \\
+- {\color{blue}{\sin \theta}} \cdot x + {\color{blue}{\cos \theta}} \cdot z \\
+1
+\end{pmatrix}
 $$
 
 绕 Z 轴旋转：
 
 $$
-\begin{bmatrix} {\color{red}{\cos \theta}} & - {\color{red}{\sin \theta}} & {\color{red}0} & {\color{red}0} \\ {\color{green}{\sin \theta}} & {\color{green}{\cos \theta}} & {\color{green}0} & {\color{green}0} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} \cdot \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} {\color{red}{\cos \theta}} \cdot x - {\color{red}{\sin \theta}} \cdot y  \\ {\color{green}{\sin \theta}} \cdot x + {\color{green}{\cos \theta}} \cdot y \\ z \\ 1 \end{pmatrix}
+\begin{bmatrix}
+{\color{red}{\cos \theta}} & - {\color{red}{\sin \theta}} & {\color{red}0} & {\color{red}0} \\
+{\color{green}{\sin \theta}} & {\color{green}{\cos \theta}} & {\color{green}0} & {\color{green}0} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+\cdot
+\begin{pmatrix}
+x \\
+y \\
+z \\
+1
+\end{pmatrix}
+=
+\begin{pmatrix}
+{\color{red}{\cos \theta}} \cdot x - {\color{red}{\sin \theta}} \cdot y \\
+{\color{green}{\sin \theta}} \cdot x + {\color{green}{\cos \theta}} \cdot y \\
+z \\
+1
+\end{pmatrix}
 $$
 
 绕任意轴 $({\color{red}{R_x}}, {\color{green}{R_y}}, {\color{blue}{R_z}})$ 旋转，其中 $({\color{red}{R_x}}, {\color{green}{R_y}}, {\color{blue}{R_z}})$ 应为单位向量，即轴方向需要先归一化：
 
 $$
-\begin{bmatrix} \cos \theta + {\color{red}{R_x}}^2(1 - \cos \theta) & {\color{red}{R_x}}{\color{green}{R_y}}(1 - \cos \theta) - {\color{blue}{R_z}} \sin \theta & {\color{red}{R_x}}{\color{blue}{R_z}}(1 - \cos \theta) + {\color{green}{R_y}} \sin \theta & 0 \\ {\color{green}{R_y}}{\color{red}{R_x}} (1 - \cos \theta) + {\color{blue}{R_z}} \sin \theta & \cos \theta + {\color{green}{R_y}}^2(1 - \cos \theta) & {\color{green}{R_y}}{\color{blue}{R_z}}(1 - \cos \theta) - {\color{red}{R_x}} \sin \theta & 0 \\ {\color{blue}{R_z}}{\color{red}{R_x}}(1 - \cos \theta) - {\color{green}{R_y}} \sin \theta & {\color{blue}{R_z}}{\color{green}{R_y}}(1 - \cos \theta) + {\color{red}{R_x}} \sin \theta & \cos \theta + {\color{blue}{R_z}}^2(1 - \cos \theta) & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}
+\begin{bmatrix}
+\cos \theta + {\color{red}{R_x}}^2(1 - \cos \theta) &
+{\color{red}{R_x}}{\color{green}{R_y}}(1 - \cos \theta) - {\color{blue}{R_z}} \sin \theta &
+{\color{red}{R_x}}{\color{blue}{R_z}}(1 - \cos \theta) + {\color{green}{R_y}} \sin \theta &
+0 \\
+{\color{green}{R_y}}{\color{red}{R_x}} (1 - \cos \theta) + {\color{blue}{R_z}} \sin \theta &
+\cos \theta + {\color{green}{R_y}}^2(1 - \cos \theta) &
+{\color{green}{R_y}}{\color{blue}{R_z}}(1 - \cos \theta) - {\color{red}{R_x}} \sin \theta &
+0 \\
+{\color{blue}{R_z}}{\color{red}{R_x}}(1 - \cos \theta) - {\color{green}{R_y}} \sin \theta &
+{\color{blue}{R_z}}{\color{green}{R_y}}(1 - \cos \theta) + {\color{red}{R_x}} \sin \theta &
+\cos \theta + {\color{blue}{R_z}}^2(1 - \cos \theta) &
+0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}
 $$
 
 任意三维旋转姿态，既可以用“绕某一根轴旋转某个角度”的轴角形式表示，也可以用“绕三个指定坐标轴依次旋转”的欧拉角形式表示。在常见的 OpenGL / Y-up 约定中，可以理解为：
@@ -288,13 +564,52 @@ roll  ：绕 Z 轴转多少
 通过将矩阵相乘，可以实现多个变换的叠加，需要注意的是，按习惯向量被视为列向量进行运算，因此右侧的矩阵被先作用于向量，比如如果我们要先放大 2 倍，再平移 $(1,2,3)$，我们要按以下顺序构建矩阵：
 
 $$
-Trans \cdot Scale = \begin{bmatrix} {\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\ {\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}2} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}3} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} \cdot \begin{bmatrix} {\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\ {\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}0} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}0} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} = \begin{bmatrix} {\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\ {\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix}
+Trans \cdot Scale =
+\begin{bmatrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}2} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}3} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}0} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}0} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
 $$
 
 然后按以下顺序进行矩阵与向量的乘法：
 
 $$
-\begin{bmatrix} {\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\ {\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2} \\ {\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3} \\ {\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1} \end{bmatrix} . \begin{bmatrix} x \\ y \\ z \\ 1 \end{bmatrix} = \begin{bmatrix} {\color{red}2x} + {\color{red}1} \\ {\color{green}2y} + {\color{green}2}  \\ {\color{blue}2z} + {\color{blue}3} \\ 1 \end{bmatrix}
+\begin{bmatrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2} \\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3} \\
+{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+x \\
+y \\
+z \\
+1
+\end{bmatrix}
+=
+\begin{bmatrix}
+{\color{red}2x} + {\color{red}1} \\
+{\color{green}2y} + {\color{green}2} \\
+{\color{blue}2z} + {\color{blue}3} \\
+1
+\end{bmatrix}
 $$
 
 
