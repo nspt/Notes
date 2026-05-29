@@ -17,9 +17,9 @@ Transformation 的核心作用，是把“模型本身长什么样”和“模�
 $$
 \bar{v} =
 \begin{pmatrix}
-{\color{red}x} \\
-{\color{green}y} \\
-{\color{blue}z}
+\textcolor{red}{x} \\
+\textcolor{green}{y} \\
+\textcolor{blue}{z}
 \end{pmatrix}
 $$
 
@@ -28,7 +28,7 @@ $$
 $$
 \bar{v} =
 \begin{pmatrix}
-{\color{red}x} & {\color{green}y} & {\color{blue}z}
+\textcolor{red}{x} & \textcolor{green}{y} & \textcolor{blue}{z}
 \end{pmatrix}
 $$
 
@@ -43,53 +43,53 @@ $$
 
 $$
 \begin{pmatrix}
-{\color{red}1} \\
-{\color{green}2} \\
-{\color{blue}3}
+\textcolor{red}{1} \\
+\textcolor{green}{2} \\
+\textcolor{blue}{3}
 \end{pmatrix}
 +
-{\color{purple}x}
+\textcolor{purple}{x}
 \rightarrow
 \begin{pmatrix}
-{\color{red}1} \\
-{\color{green}2} \\
-{\color{blue}3}
+\textcolor{red}{1} \\
+\textcolor{green}{2} \\
+\textcolor{blue}{3}
 \end{pmatrix}
 +
 \begin{pmatrix}
-{\color{purple}x} \\
-{\color{purple}x} \\
-{\color{purple}x}
+\textcolor{purple}{x} \\
+\textcolor{purple}{x} \\
+\textcolor{purple}{x}
 \end{pmatrix}
 =
 \begin{pmatrix}
-{\color{red}1} + {\color{purple}x} \\
-{\color{green}2} + {\color{purple}x} \\
-{\color{blue}3} + {\color{purple}x}
+\textcolor{red}{1} + \textcolor{purple}{x} \\
+\textcolor{green}{2} + \textcolor{purple}{x} \\
+\textcolor{blue}{3} + \textcolor{purple}{x}
 \end{pmatrix}
 $$
 
 乘除：
 
 $$
-{\color{purple} c}
+\textcolor{purple}{ c}
 \cdot
 \begin{pmatrix}
-{\color{red} x} \\
-{\color{green} y} \\
-{\color{blue} z}
+\textcolor{red}{ x} \\
+\textcolor{green}{ y} \\
+\textcolor{blue}{ z}
 \end{pmatrix}
 =
 \begin{pmatrix}
-{\color{purple} c}
+\textcolor{purple}{ c}
 \cdot
-{\color{red} x} \\
-{\color{purple} c}
+\textcolor{red}{ x} \\
+\textcolor{purple}{ c}
 \cdot
-{\color{green} y} \\
-{\color{purple} c}
+\textcolor{green}{ y} \\
+\textcolor{purple}{ c}
 \cdot
-{\color{blue} z}
+\textcolor{blue}{ z}
 \end{pmatrix}
 $$
 
@@ -100,28 +100,28 @@ $$
 $$
 \bar{v} =
 \begin{pmatrix}
-{\color{red}1} \\
-{\color{green}2} \\
-{\color{blue}3}
+\textcolor{red}{1} \\
+\textcolor{green}{2} \\
+\textcolor{blue}{3}
 \end{pmatrix},
 \bar{k} =
 \begin{pmatrix}
-{\color{red}4} \\
-{\color{green}5} \\
-{\color{blue}6}
+\textcolor{red}{4} \\
+\textcolor{green}{5} \\
+\textcolor{blue}{6}
 \end{pmatrix}
 \rightarrow
 \bar{v} + \bar{k} =
 \begin{pmatrix}
-{\color{red}1} + {\color{red}4} \\
-{\color{green}2} + {\color{green}5} \\
-{\color{blue}3} + {\color{blue}6}
+\textcolor{red}{1} + \textcolor{red}{4} \\
+\textcolor{green}{2} + \textcolor{green}{5} \\
+\textcolor{blue}{3} + \textcolor{blue}{6}
 \end{pmatrix}
 =
 \begin{pmatrix}
-{\color{red}5} \\
-{\color{green}7} \\
-{\color{blue}9}
+\textcolor{red}{5} \\
+\textcolor{green}{7} \\
+\textcolor{blue}{9}
 \end{pmatrix}
 $$
 
@@ -134,13 +134,13 @@ $$
 三维向量长度：
 
 $$
-||{\color{red}{\bar{v}}}|| = \sqrt{{\color{red}x}^2 + {\color{green}y}^2 + {\color{blue}z}^2}
+||\textcolor{red}{\bar{v}|| = \sqrt{\textcolor{red}{x}^2 + \textcolor{green}{y}^2 + \textcolor{blue}{z}^2}
 $$
 
 二维向量可以视为 z = 0 的特殊情况：
 
 $$
-||{\color{red}{\bar{v}}}|| = \sqrt{{\color{red}x}^2 + {\color{green}y}^2}
+||\textcolor{red}{\bar{v}|| = \sqrt{\textcolor{red}{x}^2 + \textcolor{green}{y}^2}
 $$
 
 ![Vectors Triangle](images/vectors_triangle.png)
@@ -171,21 +171,21 @@ $$
 
 $$
 \begin{pmatrix}
-{\color{red}{A_{x}}} \\
-{\color{green}{A_{y}}} \\
-{\color{blue}{A_{z}}}
+\textcolor{red}{A_{x} \\
+\textcolor{green}{A_{y} \\
+\textcolor{blue}{A_{z}
 \end{pmatrix}
 \times
 \begin{pmatrix}
-{\color{red}{B_{x}}} \\
-{\color{green}{B_{y}}} \\
-{\color{blue}{B_{z}}}
+\textcolor{red}{B_{x} \\
+\textcolor{green}{B_{y} \\
+\textcolor{blue}{B_{z}
 \end{pmatrix}
 =
 \begin{pmatrix}
-{\color{green}{A_{y}}} \cdot {\color{blue}{B_{z}}} - {\color{blue}{A_{z}}} \cdot {\color{green}{B_{y}}} \\
-{\color{blue}{A_{z}}} \cdot {\color{red}{B_{x}}} - {\color{red}{A_{x}}} \cdot {\color{blue}{B_{z}}} \\
-{\color{red}{A_{x}}} \cdot {\color{green}{B_{y}}} - {\color{green}{A_{y}}} \cdot {\color{red}{B_{x}}}
+\textcolor{green}{A_{y} \cdot \textcolor{blue}{B_{z} - \textcolor{blue}{A_{z} \cdot \textcolor{green}{B_{y} \\
+\textcolor{blue}{A_{z} \cdot \textcolor{red}{B_{x} - \textcolor{red}{A_{x} \cdot \textcolor{blue}{B_{z} \\
+\textcolor{red}{A_{x} \cdot \textcolor{green}{B_{y} - \textcolor{green}{A_{y} \cdot \textcolor{red}{B_{x}
 \end{pmatrix}
 $$
 
@@ -201,52 +201,52 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}1} & {\color{red}2} \\
-{\color{green}3} & {\color{green}4}
+\textcolor{red}{1} & \textcolor{red}{2} \\
+\textcolor{green}{3} & \textcolor{green}{4}
 \end{bmatrix}
 +
 \begin{bmatrix}
-{\color{red}5} & {\color{red}6} \\
-{\color{green}7} & {\color{green}8}
+\textcolor{red}{5} & \textcolor{red}{6} \\
+\textcolor{green}{7} & \textcolor{green}{8}
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}1} + {\color{red}5} & {\color{red}2} + {\color{red}6} \\
-{\color{green}3} + {\color{green}7} & {\color{green}4} + {\color{green}8}
+\textcolor{red}{1} + \textcolor{red}{5} & \textcolor{red}{2} + \textcolor{red}{6} \\
+\textcolor{green}{3} + \textcolor{green}{7} & \textcolor{green}{4} + \textcolor{green}{8}
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}6} & {\color{red}8} \\
-{\color{green}{10}} & {\color{green}{12}}
+\textcolor{red}{6} & \textcolor{red}{8} \\
+\textcolor{green}{10} & \textcolor{green}{12}
 \end{bmatrix}
 $$
 
 $$
 \begin{bmatrix}
-{\color{red}4} & {\color{red}2} \\
-{\color{green}1} & {\color{green}6}
+\textcolor{red}{4} & \textcolor{red}{2} \\
+\textcolor{green}{1} & \textcolor{green}{6}
 \end{bmatrix}
 -
 \begin{bmatrix}
-{\color{red}2} & {\color{red}4} \\
-{\color{green}0} & {\color{green}1}
+\textcolor{red}{2} & \textcolor{red}{4} \\
+\textcolor{green}{0} & \textcolor{green}{1}
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}4} - {\color{red}2} & {\color{red}2} - {\color{red}4} \\
-{\color{green}1} - {\color{green}0} & {\color{green}6} - {\color{green}1}
+\textcolor{red}{4} - \textcolor{red}{2} & \textcolor{red}{2} - \textcolor{red}{4} \\
+\textcolor{green}{1} - \textcolor{green}{0} & \textcolor{green}{6} - \textcolor{green}{1}
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}2} & -{\color{red}2} \\
-{\color{green}1} & {\color{green}5}
+\textcolor{red}{2} & -\textcolor{red}{2} \\
+\textcolor{green}{1} & \textcolor{green}{5}
 \end{bmatrix}
 $$
 
 ### 矩阵与标量的乘法
 
 $$
-{\color{green}2}
+\textcolor{green}{2}
 \cdot
 \begin{bmatrix}
 1 & 2 \\
@@ -254,8 +254,8 @@ $$
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{green}2} \cdot 1 & {\color{green}2} \cdot 2 \\
-{\color{green}2} \cdot 3 & {\color{green}2} \cdot 4
+\textcolor{green}{2} \cdot 1 & \textcolor{green}{2} \cdot 2 \\
+\textcolor{green}{2} \cdot 3 & \textcolor{green}{2} \cdot 4
 \end{bmatrix}
 =
 \begin{bmatrix}
@@ -274,18 +274,18 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}1} & {\color{red}2} \\
-{\color{green}3} & {\color{green}4}
+\textcolor{red}{1} & \textcolor{red}{2} \\
+\textcolor{green}{3} & \textcolor{green}{4}
 \end{bmatrix}
 \cdot
 \begin{bmatrix}
-{\color{blue}5} & {\color{purple}6} \\
-{\color{blue}7} & {\color{purple}8}
+\textcolor{blue}{5} & \textcolor{purple}{6} \\
+\textcolor{blue}{7} & \textcolor{purple}{8}
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}1} \cdot {\color{blue}5} + {\color{red}2} \cdot {\color{blue}7} & {\color{red}1} \cdot {\color{purple}6} + {\color{red}2} \cdot {\color{purple}8} \\
-{\color{green}3} \cdot {\color{blue}5} + {\color{green}4} \cdot {\color{blue}7} & {\color{green}3} \cdot {\color{purple}6} + {\color{green}4} \cdot {\color{purple}8}
+\textcolor{red}{1} \cdot \textcolor{blue}{5} + \textcolor{red}{2} \cdot \textcolor{blue}{7} & \textcolor{red}{1} \cdot \textcolor{purple}{6} + \textcolor{red}{2} \cdot \textcolor{purple}{8} \\
+\textcolor{green}{3} \cdot \textcolor{blue}{5} + \textcolor{green}{4} \cdot \textcolor{blue}{7} & \textcolor{green}{3} \cdot \textcolor{purple}{6} + \textcolor{green}{4} \cdot \textcolor{purple}{8}
 \end{bmatrix}
 =
 \begin{bmatrix}
@@ -296,27 +296,27 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}4} & {\color{red}2} & {\color{red}0} \\
-{\color{green}0} & {\color{green}8} & {\color{green}1} \\
-{\color{blue}0} & {\color{blue}1} & {\color{blue}0}
+\textcolor{red}{4} & \textcolor{red}{2} & \textcolor{red}{0} \\
+\textcolor{green}{0} & \textcolor{green}{8} & \textcolor{green}{1} \\
+\textcolor{blue}{0} & \textcolor{blue}{1} & \textcolor{blue}{0}
 \end{bmatrix}
 \cdot
 \begin{bmatrix}
-{\color{red}4} & {\color{green}2} & {\color{blue}1} \\
-{\color{red}2} & {\color{green}0} & {\color{blue}4} \\
-{\color{red}9} & {\color{green}4} & {\color{blue}2}
+\textcolor{red}{4} & \textcolor{green}{2} & \textcolor{blue}{1} \\
+\textcolor{red}{2} & \textcolor{green}{0} & \textcolor{blue}{4} \\
+\textcolor{red}{9} & \textcolor{green}{4} & \textcolor{blue}{2}
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}4} \cdot {\color{red}4} + {\color{red}2} \cdot {\color{red}2} + {\color{red}0} \cdot {\color{red}9} &
-{\color{red}4} \cdot {\color{green}2} + {\color{red}2} \cdot {\color{green}0} + {\color{red}0} \cdot {\color{green}4} &
-{\color{red}4} \cdot {\color{blue}1} + {\color{red}2} \cdot {\color{blue}4} + {\color{red}0} \cdot {\color{blue}2} \\
-{\color{green}0} \cdot {\color{red}4} + {\color{green}8} \cdot {\color{red}2} + {\color{green}1} \cdot {\color{red}9} &
-{\color{green}0} \cdot {\color{green}2} + {\color{green}8} \cdot {\color{green}0} + {\color{green}1} \cdot {\color{green}4} &
-{\color{green}0} \cdot {\color{blue}1} + {\color{green}8} \cdot {\color{blue}4} + {\color{green}1} \cdot {\color{blue}2} \\
-{\color{blue}0} \cdot {\color{red}4} + {\color{blue}1} \cdot {\color{red}2} + {\color{blue}0} \cdot {\color{red}9} &
-{\color{blue}0} \cdot {\color{green}2} + {\color{blue}1} \cdot {\color{green}0} + {\color{blue}0} \cdot {\color{green}4} &
-{\color{blue}0} \cdot {\color{blue}1} + {\color{blue}1} \cdot {\color{blue}4} + {\color{blue}0} \cdot {\color{blue}2}
+\textcolor{red}{4} \cdot \textcolor{red}{4} + \textcolor{red}{2} \cdot \textcolor{red}{2} + \textcolor{red}{0} \cdot \textcolor{red}{9} &
+\textcolor{red}{4} \cdot \textcolor{green}{2} + \textcolor{red}{2} \cdot \textcolor{green}{0} + \textcolor{red}{0} \cdot \textcolor{green}{4} &
+\textcolor{red}{4} \cdot \textcolor{blue}{1} + \textcolor{red}{2} \cdot \textcolor{blue}{4} + \textcolor{red}{0} \cdot \textcolor{blue}{2} \\
+\textcolor{green}{0} \cdot \textcolor{red}{4} + \textcolor{green}{8} \cdot \textcolor{red}{2} + \textcolor{green}{1} \cdot \textcolor{red}{9} &
+\textcolor{green}{0} \cdot \textcolor{green}{2} + \textcolor{green}{8} \cdot \textcolor{green}{0} + \textcolor{green}{1} \cdot \textcolor{green}{4} &
+\textcolor{green}{0} \cdot \textcolor{blue}{1} + \textcolor{green}{8} \cdot \textcolor{blue}{4} + \textcolor{green}{1} \cdot \textcolor{blue}{2} \\
+\textcolor{blue}{0} \cdot \textcolor{red}{4} + \textcolor{blue}{1} \cdot \textcolor{red}{2} + \textcolor{blue}{0} \cdot \textcolor{red}{9} &
+\textcolor{blue}{0} \cdot \textcolor{green}{2} + \textcolor{blue}{1} \cdot \textcolor{green}{0} + \textcolor{blue}{0} \cdot \textcolor{green}{4} &
+\textcolor{blue}{0} \cdot \textcolor{blue}{1} + \textcolor{blue}{1} \cdot \textcolor{blue}{4} + \textcolor{blue}{0} \cdot \textcolor{blue}{2}
 \end{bmatrix}
 =
 \begin{bmatrix}
@@ -338,10 +338,10 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
-{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{1} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{0} \\
+\textcolor{green}{0} & \textcolor{green}{1} & \textcolor{green}{0} & \textcolor{green}{0} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{1} & \textcolor{blue}{0} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 $$
 
@@ -349,10 +349,10 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
-{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{1} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{0} \\
+\textcolor{green}{0} & \textcolor{green}{1} & \textcolor{green}{0} & \textcolor{green}{0} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{1} & \textcolor{blue}{0} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 \cdot
 \begin{bmatrix}
@@ -363,10 +363,10 @@ $$
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}1} \cdot 1 \\
-{\color{green}1} \cdot 2 \\
-{\color{blue}1} \cdot 3 \\
-{\color{purple}1} \cdot 4
+\textcolor{red}{1} \cdot 1 \\
+\textcolor{green}{1} \cdot 2 \\
+\textcolor{blue}{1} \cdot 3 \\
+\textcolor{purple}{1} \cdot 4
 \end{bmatrix}
 =
 \begin{bmatrix}
@@ -385,10 +385,10 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}{S_1}} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
-{\color{green}0} & {\color{green}{S_2}} & {\color{green}0} & {\color{green}0} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}{S_3}} & {\color{blue}0} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{S_1} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{0} \\
+\textcolor{green}{0} & \textcolor{green}{S_2} & \textcolor{green}{0} & \textcolor{green}{0} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{S_3} & \textcolor{blue}{0} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 \cdot
 \begin{pmatrix}
@@ -399,9 +399,9 @@ z \\
 \end{pmatrix}
 =
 \begin{pmatrix}
-{\color{red}{S_1}} \cdot x \\
-{\color{green}{S_2}} \cdot y \\
-{\color{blue}{S_3}} \cdot z \\
+\textcolor{red}{S_1} \cdot x \\
+\textcolor{green}{S_2} \cdot y \\
+\textcolor{blue}{S_3} \cdot z \\
 1
 \end{pmatrix}
 $$
@@ -410,10 +410,10 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}{T_x}} \\
-{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}{T_y}} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}{T_z}} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{1} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{T_x} \\
+\textcolor{green}{0} & \textcolor{green}{1} & \textcolor{green}{0} & \textcolor{green}{T_y} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{1} & \textcolor{blue}{T_z} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 \cdot
 \begin{pmatrix}
@@ -424,9 +424,9 @@ z \\
 \end{pmatrix}
 =
 \begin{pmatrix}
-x + {\color{red}{T_x}} \\
-y + {\color{green}{T_y}} \\
-z + {\color{blue}{T_z}} \\
+x + \textcolor{red}{T_x} \\
+y + \textcolor{green}{T_y} \\
+z + \textcolor{blue}{T_z} \\
 1
 \end{pmatrix}
 $$
@@ -445,10 +445,10 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
-{\color{green}0} & {\color{green}{\cos \theta}} & - {\color{green}{\sin \theta}} & {\color{green}0} \\
-{\color{blue}0} & {\color{blue}{\sin \theta}} & {\color{blue}{\cos \theta}} & {\color{blue}0} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{1} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{0} \\
+\textcolor{green}{0} & \textcolor{green}{\cos \theta} & - \textcolor{green}{\sin \theta} & \textcolor{green}{0} \\
+\textcolor{blue}{0} & \textcolor{blue}{\sin \theta} & \textcolor{blue}{\cos \theta} & \textcolor{blue}{0} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 \cdot
 \begin{pmatrix}
@@ -460,8 +460,8 @@ z \\
 =
 \begin{pmatrix}
 x \\
-{\color{green}{\cos \theta}} \cdot y - {\color{green}{\sin \theta}} \cdot z \\
-{\color{blue}{\sin \theta}} \cdot y + {\color{blue}{\cos \theta}} \cdot z \\
+\textcolor{green}{\cos \theta} \cdot y - \textcolor{green}{\sin \theta} \cdot z \\
+\textcolor{blue}{\sin \theta} \cdot y + \textcolor{blue}{\cos \theta} \cdot z \\
 1
 \end{pmatrix}
 $$
@@ -470,10 +470,10 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}{\cos \theta}} & {\color{red}0} & {\color{red}{\sin \theta}} & {\color{red}0} \\
-{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0} \\
-- {\color{blue}{\sin \theta}} & {\color{blue}0} & {\color{blue}{\cos \theta}} & {\color{blue}0} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{\cos \theta} & \textcolor{red}{0} & \textcolor{red}{\sin \theta} & \textcolor{red}{0} \\
+\textcolor{green}{0} & \textcolor{green}{1} & \textcolor{green}{0} & \textcolor{green}{0} \\
+- \textcolor{blue}{\sin \theta} & \textcolor{blue}{0} & \textcolor{blue}{\cos \theta} & \textcolor{blue}{0} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 \cdot
 \begin{pmatrix}
@@ -484,9 +484,9 @@ z \\
 \end{pmatrix}
 =
 \begin{pmatrix}
-{\color{red}{\cos \theta}} \cdot x + {\color{red}{\sin \theta}} \cdot z \\
+\textcolor{red}{\cos \theta} \cdot x + \textcolor{red}{\sin \theta} \cdot z \\
 y \\
-- {\color{blue}{\sin \theta}} \cdot x + {\color{blue}{\cos \theta}} \cdot z \\
+- \textcolor{blue}{\sin \theta} \cdot x + \textcolor{blue}{\cos \theta} \cdot z \\
 1
 \end{pmatrix}
 $$
@@ -495,10 +495,10 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}{\cos \theta}} & - {\color{red}{\sin \theta}} & {\color{red}0} & {\color{red}0} \\
-{\color{green}{\sin \theta}} & {\color{green}{\cos \theta}} & {\color{green}0} & {\color{green}0} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{\cos \theta} & - \textcolor{red}{\sin \theta} & \textcolor{red}{0} & \textcolor{red}{0} \\
+\textcolor{green}{\sin \theta} & \textcolor{green}{\cos \theta} & \textcolor{green}{0} & \textcolor{green}{0} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{1} & \textcolor{blue}{0} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 \cdot
 \begin{pmatrix}
@@ -509,28 +509,28 @@ z \\
 \end{pmatrix}
 =
 \begin{pmatrix}
-{\color{red}{\cos \theta}} \cdot x - {\color{red}{\sin \theta}} \cdot y \\
-{\color{green}{\sin \theta}} \cdot x + {\color{green}{\cos \theta}} \cdot y \\
+\textcolor{red}{\cos \theta} \cdot x - \textcolor{red}{\sin \theta} \cdot y \\
+\textcolor{green}{\sin \theta} \cdot x + \textcolor{green}{\cos \theta} \cdot y \\
 z \\
 1
 \end{pmatrix}
 $$
 
-绕任意轴 $({\color{red}{R_x}}, {\color{green}{R_y}}, {\color{blue}{R_z}})$ 旋转，其中 $({\color{red}{R_x}}, {\color{green}{R_y}}, {\color{blue}{R_z}})$ 应为单位向量，即轴方向需要先归一化：
+绕任意轴 $(\textcolor{red}{R_x}, \textcolor{green}{R_y}, \textcolor{blue}{R_z})$ 旋转，其中 $(\textcolor{red}{R_x}, \textcolor{green}{R_y}, \textcolor{blue}{R_z})$ 应为单位向量，即轴方向需要先归一化：
 
 $$
 \begin{bmatrix}
-\cos \theta + {\color{red}{R_x}}^2(1 - \cos \theta) &
-{\color{red}{R_x}}{\color{green}{R_y}}(1 - \cos \theta) - {\color{blue}{R_z}} \sin \theta &
-{\color{red}{R_x}}{\color{blue}{R_z}}(1 - \cos \theta) + {\color{green}{R_y}} \sin \theta &
+\cos \theta + \textcolor{red}{R_x}^2(1 - \cos \theta) &
+\textcolor{red}{R_x}\textcolor{green}{R_y}(1 - \cos \theta) - \textcolor{blue}{R_z} \sin \theta &
+\textcolor{red}{R_x}\textcolor{blue}{R_z}(1 - \cos \theta) + \textcolor{green}{R_y} \sin \theta &
 0 \\
-{\color{green}{R_y}}{\color{red}{R_x}} (1 - \cos \theta) + {\color{blue}{R_z}} \sin \theta &
-\cos \theta + {\color{green}{R_y}}^2(1 - \cos \theta) &
-{\color{green}{R_y}}{\color{blue}{R_z}}(1 - \cos \theta) - {\color{red}{R_x}} \sin \theta &
+\textcolor{green}{R_y}\textcolor{red}{R_x} (1 - \cos \theta) + \textcolor{blue}{R_z} \sin \theta &
+\cos \theta + \textcolor{green}{R_y}^2(1 - \cos \theta) &
+\textcolor{green}{R_y}\textcolor{blue}{R_z}(1 - \cos \theta) - \textcolor{red}{R_x} \sin \theta &
 0 \\
-{\color{blue}{R_z}}{\color{red}{R_x}}(1 - \cos \theta) - {\color{green}{R_y}} \sin \theta &
-{\color{blue}{R_z}}{\color{green}{R_y}}(1 - \cos \theta) + {\color{red}{R_x}} \sin \theta &
-\cos \theta + {\color{blue}{R_z}}^2(1 - \cos \theta) &
+\textcolor{blue}{R_z}\textcolor{red}{R_x}(1 - \cos \theta) - \textcolor{green}{R_y} \sin \theta &
+\textcolor{blue}{R_z}\textcolor{green}{R_y}(1 - \cos \theta) + \textcolor{red}{R_x} \sin \theta &
+\cos \theta + \textcolor{blue}{R_z}^2(1 - \cos \theta) &
 0 \\
 0 & 0 & 0 & 1
 \end{bmatrix}
@@ -566,24 +566,24 @@ roll  ：绕 Z 轴转多少
 $$
 Trans \cdot Scale =
 \begin{bmatrix}
-{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\
-{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}2} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}3} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{1} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{1} \\
+\textcolor{green}{0} & \textcolor{green}{1} & \textcolor{green}{0} & \textcolor{green}{2} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{1} & \textcolor{blue}{3} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 \cdot
 \begin{bmatrix}
-{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}0} \\
-{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}0} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}0} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{2} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{0} \\
+\textcolor{green}{0} & \textcolor{green}{2} & \textcolor{green}{0} & \textcolor{green}{0} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{2} & \textcolor{blue}{0} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\
-{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{2} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{1} \\
+\textcolor{green}{0} & \textcolor{green}{2} & \textcolor{green}{0} & \textcolor{green}{2} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{2} & \textcolor{blue}{3} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 $$
 
@@ -591,10 +591,10 @@ $$
 
 $$
 \begin{bmatrix}
-{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1} \\
-{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2} \\
-{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3} \\
-{\color{purple}0} & {\color{purple}0} & {\color{purple}0} & {\color{purple}1}
+\textcolor{red}{2} & \textcolor{red}{0} & \textcolor{red}{0} & \textcolor{red}{1} \\
+\textcolor{green}{0} & \textcolor{green}{2} & \textcolor{green}{0} & \textcolor{green}{2} \\
+\textcolor{blue}{0} & \textcolor{blue}{0} & \textcolor{blue}{2} & \textcolor{blue}{3} \\
+\textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{0} & \textcolor{purple}{1}
 \end{bmatrix}
 \cdot
 \begin{bmatrix}
@@ -605,9 +605,9 @@ z \\
 \end{bmatrix}
 =
 \begin{bmatrix}
-{\color{red}2x} + {\color{red}1} \\
-{\color{green}2y} + {\color{green}2} \\
-{\color{blue}2z} + {\color{blue}3} \\
+\textcolor{red}{2x} + \textcolor{red}{1} \\
+\textcolor{green}{2y} + \textcolor{green}{2} \\
+\textcolor{blue}{2z} + \textcolor{blue}{3} \\
 1
 \end{bmatrix}
 $$
