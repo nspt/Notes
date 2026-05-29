@@ -134,13 +134,13 @@ $$
 三维向量长度：
 
 $$
-||\textcolor{red}{\bar{v}|| = \sqrt{\textcolor{red}{x}^2 + \textcolor{green}{y}^2 + \textcolor{blue}{z}^2}
+||\textcolor{red}{\bar{v}}|| = \sqrt{\textcolor{red}{x}^2 + \textcolor{green}{y}^2 + \textcolor{blue}{z}^2}
 $$
 
 二维向量可以视为 z = 0 的特殊情况：
 
 $$
-||\textcolor{red}{\bar{v}|| = \sqrt{\textcolor{red}{x}^2 + \textcolor{green}{y}^2}
+||\textcolor{red}{\bar{v}}|| = \sqrt{\textcolor{red}{x}^2 + \textcolor{green}{y}^2}
 $$
 
 ![Vectors Triangle](images/vectors_triangle.png)
@@ -171,21 +171,21 @@ $$
 
 $$
 \begin{pmatrix}
-\textcolor{red}{A_{x} \\
-\textcolor{green}{A_{y} \\
-\textcolor{blue}{A_{z}
+\textcolor{red}{A_{x}} \\
+\textcolor{green}{A_{y}} \\
+\textcolor{blue}{A_{z}}
 \end{pmatrix}
 \times
 \begin{pmatrix}
-\textcolor{red}{B_{x} \\
-\textcolor{green}{B_{y} \\
-\textcolor{blue}{B_{z}
+\textcolor{red}{B_{x}} \\
+\textcolor{green}{B_{y}} \\
+\textcolor{blue}{B_{z}}
 \end{pmatrix}
 =
 \begin{pmatrix}
-\textcolor{green}{A_{y} \cdot \textcolor{blue}{B_{z} - \textcolor{blue}{A_{z} \cdot \textcolor{green}{B_{y} \\
-\textcolor{blue}{A_{z} \cdot \textcolor{red}{B_{x} - \textcolor{red}{A_{x} \cdot \textcolor{blue}{B_{z} \\
-\textcolor{red}{A_{x} \cdot \textcolor{green}{B_{y} - \textcolor{green}{A_{y} \cdot \textcolor{red}{B_{x}
+\textcolor{green}{A_{y}} \cdot \textcolor{blue}{B_{z}} - \textcolor{blue}{A_{z}} \cdot \textcolor{green}{B_{y}} \\
+\textcolor{blue}{A_{z}} \cdot \textcolor{red}{B_{x}} - \textcolor{red}{A_{x}} \cdot \textcolor{blue}{B_{z}} \\
+\textcolor{red}{A_{x}} \cdot \textcolor{green}{B_{y}} - \textcolor{green}{A_{y}} \cdot \textcolor{red}{B_{x}}
 \end{pmatrix}
 $$
 
