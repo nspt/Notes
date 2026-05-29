@@ -10,12 +10,13 @@ Transformation 的核心作用，是把“模型本身长什么样”和“模�
 
 向量可以有二维、三维或更高维。一般来说，二维向量常用于表示 2D 平面中的方向或坐标，三维向量常用于表示 3D 空间中的方向或坐标；而在 3D 图形学中，四维向量常用于表示三维空间中的齐次坐标，例如 (x, y, z, w)。其中 w 分量用于区分点和方向，并支持平移、透视投影等变换在矩阵体系中的统一计算。
 
-向量的表示法：
+向量有两种表示法：Nx1 的列向量或 1xN 的行向量。
 
 列向量：
 
 $$
-\bar{v} = \begin{pmatrix}
+\bar{v} =
+\begin{pmatrix}
 {\color{red}x} \\
 {\color{green}y} \\
 {\color{blue}z}
@@ -25,7 +26,8 @@ $$
 行向量：
 
 $$
-\bar{v} = \begin{pmatrix}
+\bar{v} =
+\begin{pmatrix}
 {\color{red}x} & {\color{green}y} & {\color{blue}z}
 \end{pmatrix}
 $$
@@ -35,16 +37,59 @@ $$
 
 ### 向量与标量（*Scalar*）的基本运算
 
-标量是一个数字。当对向量进行标量加、减、乘或除运算时，我们只需将向量的每个分量分别与该标量相加、相减、相乘或相除：
+标量是一个数字。当对向量进行标量加、减、乘或除运算时，我们只需将向量的每个分量分别与该标量相加、相减、相乘或相除。
 
-$$
 加减：
-\begin{pmatrix} {\color{red}1} \\ {\color{green}2} \\ {\color{blue}3} \end{pmatrix} + {\color{purple}x} \rightarrow \begin{pmatrix} {\color{red}1} \\ {\color{green}2} \\ {\color{blue}3} \end{pmatrix} + \begin{pmatrix} {\color{purple}x} \\ {\color{purple}x} \\ {\color{purple}x} \end{pmatrix}  = \begin{pmatrix} {\color{red}1} + {\color{purple}x} \\ {\color{green}2} + {\color{purple}x} \\ {\color{blue}3} + {\color{purple}x} \end{pmatrix}
-$$
 
 $$
+\begin{pmatrix}
+{\color{red}1} \\
+{\color{green}2} \\
+{\color{blue}3}
+\end{pmatrix}
++
+{\color{purple}x}
+\rightarrow
+\begin{pmatrix}
+{\color{red}1} \\
+{\color{green}2} \\
+{\color{blue}3}
+\end{pmatrix}
++
+\begin{pmatrix}
+{\color{purple}x} \\
+{\color{purple}x} \\
+{\color{purple}x}
+\end{pmatrix}
+=
+\begin{pmatrix}
+{\color{red}1} + {\color{purple}x} \\
+{\color{green}2} + {\color{purple}x} \\
+{\color{blue}3} + {\color{purple}x}
+\end{pmatrix}
+$$
+
 乘除：
-{\color{purple} c} \cdot \begin{pmatrix} {\color{red} x} \\ {\color{green} y} \\ {\color{blue} z} \end{pmatrix} = \begin{pmatrix} {\color{purple} c} \cdot {\color{red} x} \\ {\color{purple} c} \cdot {\color{green} y} \\ {\color{purple} c} \cdot {\color{blue} z}
+
+$$
+{\color{purple} c}
+\cdot
+\begin{pmatrix}
+{\color{red} x} \\
+{\color{green} y} \\
+{\color{blue} z}
+\end{pmatrix}
+=
+\begin{pmatrix}
+{\color{purple} c}
+\cdot
+{\color{red} x} \\
+{\color{purple} c}
+\cdot
+{\color{green} y} \\
+{\color{purple} c}
+\cdot
+{\color{blue} z}
 \end{pmatrix}
 $$
 
