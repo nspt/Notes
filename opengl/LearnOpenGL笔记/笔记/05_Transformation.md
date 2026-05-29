@@ -12,13 +12,22 @@ Transformation 的核心作用，是把“模型本身长什么样”和“模�
 
 向量的表示法：
 
-$$
 列向量：
-\bar{v} = \begin{pmatrix} {\color{red}x} \\ {\color{green}y} \\ {\color{blue}z} \end{pmatrix}
+
 $$
+\bar{v} = \begin{pmatrix}
+{\color{red}x} \\
+{\color{green}y} \\
+{\color{blue}z}
+\end{pmatrix}
 $$
+
 行向量：
-\bar{v} = \begin{pmatrix} {\color{red}x} & {\color{green}y} & {\color{blue}z} \end{pmatrix}
+
+$$
+\bar{v} = \begin{pmatrix}
+{\color{red}x} & {\color{green}y} & {\color{blue}z}
+\end{pmatrix}
 $$
 
 > 行向量和列向量是向量的两种表示约定；几何意义可以相同，但在线性代数运算中必须配套使用不同的矩阵乘法顺序。
