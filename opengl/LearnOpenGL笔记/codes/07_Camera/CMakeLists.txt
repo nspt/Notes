@@ -1,0 +1,3 @@
+add_subdirectory(0_auto_rotate)
+add_subdirectory(1_fly_camera)
+add_subdirectory(2_fps_camera)

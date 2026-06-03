@@ -1,0 +1,2 @@
+add_subdirectory(0_3d_plane)
+add_subdirectory(1_3d_cubes)
