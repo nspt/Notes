@@ -37,6 +37,7 @@ const glm::vec3 &Camera::up() const
     return up_real_;
 }
 
+
 float Camera::yaw() const
 {
     return yaw_;

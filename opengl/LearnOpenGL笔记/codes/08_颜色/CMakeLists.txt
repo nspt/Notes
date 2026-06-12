@@ -1,0 +1,3 @@
+add_subdirectory(0_basic)
+add_subdirectory(1_phong)
+add_subdirectory(2_material)

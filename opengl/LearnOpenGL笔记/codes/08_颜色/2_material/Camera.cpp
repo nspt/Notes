@@ -2,11 +2,11 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <algorithm>
 
-Camera::Camera(
+Camera::Camera(Type type,
     const glm::vec3 &pos,
     const glm::vec3 &up,
     float yaw, float pitch)
-    : pos_{ pos }, up_ref_{ up }, yaw_{ yaw }, pitch_{ pitch }
+    : type_{ type }, pos_{ pos }, up_ref_{ up }, yaw_{ yaw }, pitch_{ pitch }
 {
     pitch_ = std::clamp(pitch_, -89.0f, 89.0f);
     updateInfo();
@@ -37,6 +37,7 @@ const glm::vec3 &Camera::up() const
     return up_real_;
 }
 
+
 float Camera::yaw() const
 {
     return yaw_;
@@ -45,6 +46,11 @@ float Camera::yaw() const
 float Camera::pitch() const
 {
     return pitch_;
+}
+
+Camera::Type Camera::type() const
+{
+    return type_;
 }
 
 void Camera::yaw(float deg)
