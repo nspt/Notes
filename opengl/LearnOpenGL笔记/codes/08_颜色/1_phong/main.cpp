@@ -5,7 +5,6 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
-#include <thread>
 #include <vector>
 #include <stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
