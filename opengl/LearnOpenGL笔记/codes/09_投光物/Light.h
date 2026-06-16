@@ -11,6 +11,7 @@ struct alignas(16) DirectionalLight {
 };
 
 struct alignas(16) PointLight {
+    glm::vec4 pos_;
     glm::vec4 pos_view_;
     glm::vec4 ambient_;
     glm::vec4 diffuse_;
@@ -19,6 +20,7 @@ struct alignas(16) PointLight {
 };
 
 struct alignas(16) SpotLight {
+    glm::vec4 pos_;
     glm::vec4 pos_view_;
     glm::vec4 ambient_;
     glm::vec4 diffuse_;

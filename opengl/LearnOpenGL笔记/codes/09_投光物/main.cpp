@@ -14,6 +14,7 @@
 #include "Mesh.h"
 #include "glm/detail/func_trigonometric.hpp"
 #include "Camera.h"
+#include "glm/detail/type_mat.hpp"
 #include "glm/detail/type_vec.hpp"
 #include "RenderObject.h"
 #include "Light.h"
@@ -296,6 +297,93 @@ LightData createLightData()
     return data;
 }
 
+void applyLightData(WinData &win_data, LightData &lights, UniformBuffer &lightDataUBO)
+{
+    lights.point[0].pos_ = glm::vec4{ 5, 0, 0, 1 };
+    lights.point[0].pos_view_ = win_data.camera.viewMatrix() * lights.point[0].pos_;
+
+    lights.spot[0].pos_ = glm::vec4{ -1, 0, 0, 1 };
+    lights.spot[0].pos_view_ = win_data.camera.viewMatrix() * lights.spot[0].pos_;
+    auto inner_cutoff = lights.spot[0].direction_inner_.w;
+    lights.spot[0].direction_inner_ = glm::normalize(win_data.camera.viewMatrix() * glm::vec4{ 1, 0, 0, 0 });
+    lights.spot[0].direction_inner_.w = inner_cutoff;
+
+    lightDataUBO.setSubData(0, sizeof(LightData), &lights);
+}
+
+void renderCubes(WinData &win_data, std::vector<RenderObject> &cubes)
+{
+    auto projection = glm::perspective(
+        glm::radians(win_data.fov),
+        static_cast<float>(win_width) / static_cast<float>(win_height),
+        0.1f,
+        100.0f
+    );
+    auto program = cubes.front().material_->program_;
+    program->use();
+    program->setMat4("projection", projection);
+    program->setMat4("view", win_data.camera.viewMatrix());
+    for (auto &cube : cubes) {
+        program->setMat4("model", cube.transform_);
+        cube.material_->apply();
+        cube.mesh_->draw();
+    }
+}
+
+void renderLightSrc(WinData &win_data, LightData &lights, RenderObject &obj)
+{
+    auto projection = glm::perspective(
+        glm::radians(win_data.fov),
+        static_cast<float>(win_width) / static_cast<float>(win_height),
+        0.1f,
+        100.0f
+    );
+    auto program = obj.material_->program_;
+    program->use();
+    program->setMat4("projection", projection);
+    program->setMat4("view", win_data.camera.viewMatrix());
+
+    for (int i = 0; i < lights.counts.y; ++i) {
+        auto model = glm::translate(glm::mat4{ 1.0 }, glm::vec3(lights.point[i].pos_));
+        model = glm::scale(model, glm::vec3{ 0.2, 0.2, 0.2 });
+        program->setVec3("light_color", glm::vec3{ 0.7 });
+        program->setMat4("model", model);
+        obj.mesh_->draw();
+    }
+    for (int i = 0; i < lights.counts.z; ++i) {
+        auto model = glm::translate(glm::mat4{ 1.0 }, glm::vec3(lights.spot[i].pos_));
+        model = glm::scale(model, glm::vec3{ 0.1, 0.1, 0.1 });
+        program->setVec3("light_color", glm::vec3{ 1.0 });
+        program->setMat4("model", model);
+        obj.mesh_->draw();
+    }
+}
+
+std::vector<RenderObject> createCubes(std::shared_ptr<Mesh> cube_mesh, std::shared_ptr<Material> cube_material)
+{
+    std::vector<RenderObject> cubes;
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        //glm::vec3( 2.0f,  5.0f, -15.0f),
+        //glm::vec3(-1.5f, -2.2f, -2.5f),
+        //glm::vec3(-3.8f, -2.0f, -12.3f),
+        //glm::vec3( 2.4f, -0.4f, -3.5f),
+        //glm::vec3(-1.7f,  3.0f, -7.5f),
+        //glm::vec3( 1.3f, -2.0f, -2.5f),
+        //glm::vec3( 1.5f,  2.0f, -2.5f),
+        //glm::vec3( 1.5f,  0.2f, -1.5f),
+        //glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
+    for (auto &pos : cubePositions) {
+        cubes.push_back(RenderObject{});
+        auto &cube{ cubes.back() };
+        cube.mesh_ = cube_mesh;
+        cube.material_ = cube_material;
+        cube.transform_ = glm::translate(cube.transform_, pos);
+    }
+    return cubes;
+}
+
 int main(int argc, char* argv[])
 {
     using namespace std::chrono;
@@ -326,58 +414,28 @@ int main(int argc, char* argv[])
         cube_material->diffuse_map_ = std::make_shared<Texture2D>(resourceDir + "/textures/container2.png");
         cube_material->specular_map_ = std::make_shared<Texture2D>(resourceDir + "/textures/container2_specular.png");
         cube_material->shininess_ = 128.0f;
-        std::vector<RenderObject> cubes;
-        glm::vec3 cubePositions[] = {
-            glm::vec3( 0.0f,  0.0f,  0.0f),
-            //glm::vec3( 2.0f,  5.0f, -15.0f),
-            //glm::vec3(-1.5f, -2.2f, -2.5f),
-            //glm::vec3(-3.8f, -2.0f, -12.3f),
-            //glm::vec3( 2.4f, -0.4f, -3.5f),
-            //glm::vec3(-1.7f,  3.0f, -7.5f),
-            //glm::vec3( 1.3f, -2.0f, -2.5f),
-            //glm::vec3( 1.5f,  2.0f, -2.5f),
-            //glm::vec3( 1.5f,  0.2f, -1.5f),
-            //glm::vec3(-1.3f,  1.0f, -1.5f)
-        };
-        for (auto &pos : cubePositions) {
-            cubes.push_back(RenderObject{});
-            auto &cube{ cubes.back() };
-            cube.mesh_ = cube_mesh;
-            cube.material_ = cube_material;
-            cube.transform_ = glm::translate(cube.transform_, pos);
-        }
+
+        auto light_src_material = std::make_shared<Material>();
+        light_src_material->program_ = std::make_shared<ShaderProgram>(
+            resourceDir + "shaders/08light_src.vert.glsl",
+            resourceDir + "shaders/08light_src.frag.glsl"
+        );
+        light_src_material->program_->setVec3("light_color", glm::vec3{ 1.0, 1.0, 1.0 });
+        
+        auto cubes = createCubes(cube_mesh, cube_material);
+
+        RenderObject light_src{};
+        light_src.mesh_ = cube_mesh;
+        light_src.material_ = light_src_material;
     
         win_data->last_time = steady_clock::now();
         for (unsigned frame = 0; !glfwWindowShouldClose(window); ++frame) {
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            auto projection = glm::perspective(
-                glm::radians(win_data->fov),
-                static_cast<float>(win_width) / static_cast<float>(win_height),
-                0.1f,
-                100.0f
-            );
-            {
-                lights.point[0].pos_view_ = win_data->camera.viewMatrix() * glm::vec4{ 5, 0, 0, 1 };
-            }
-            {
-                lights.spot[0].pos_view_ = win_data->camera.viewMatrix() * glm::vec4{ -1, 0, 0, 1 };
-                auto inner_cutoff = lights.spot[0].direction_inner_.w;
-                lights.spot[0].direction_inner_ = glm::normalize(win_data->camera.viewMatrix() * glm::vec4{ 1, 0, 0, 0 });
-                lights.spot[0].direction_inner_.w = inner_cutoff;
-            }
-            lightDataUBO.setSubData(0, sizeof(LightData), &lights);
-
-            auto program = cubes.front().material_->program_;
-            program->use();
-            program->setMat4("projection", projection);
-            program->setMat4("view", win_data->camera.viewMatrix());
-            for (auto &cube : cubes) {
-                program->setMat4("model", cube.transform_);
-                cube.material_->apply();
-                cube.mesh_->draw();
-            }
+            applyLightData(*win_data, lights, lightDataUBO);
+            renderCubes(*win_data, cubes);
+            renderLightSrc(*win_data, lights, light_src);
     
             auto now = steady_clock::now();
             win_data->delta_time = now - win_data->last_time;

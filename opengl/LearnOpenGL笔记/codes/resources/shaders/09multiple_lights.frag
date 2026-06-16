@@ -21,6 +21,7 @@ struct DirectionalLight {
 };
 
 struct PointLight {
+    vec4 position;
     vec4 position_view;
     vec4 ambient;
     vec4 diffuse;
@@ -29,6 +30,7 @@ struct PointLight {
 };
 
 struct SpotLight {
+    vec4 position;
     vec4 position_view;
     vec4 ambient;
     vec4 diffuse;
