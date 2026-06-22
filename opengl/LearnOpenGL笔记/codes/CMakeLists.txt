@@ -30,6 +30,14 @@ target_include_directories(glm
 )
 
 add_subdirectory(third_party/glfw-3.4)
+
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/assimp)
+
 add_subdirectory(00_基础环境搭建)
 add_subdirectory(01_基本框架)
 add_subdirectory(02_图形管线基础)
@@ -39,4 +47,5 @@ add_subdirectory(05_Transformation)
 add_subdirectory(06_Coordinates)
 add_subdirectory(07_Camera)
 add_subdirectory(08_颜色)
-add_subdirectory(09_投光物)
+add_subdirectory(09_投光物与多光源)
+add_subdirectory(10_模型加载)
