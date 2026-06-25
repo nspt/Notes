@@ -182,6 +182,7 @@ auto initContextAndWindow()
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
     auto win_data = std::make_unique<WinData>();
     glfwSetWindowUserPointer(window, win_data.get());
