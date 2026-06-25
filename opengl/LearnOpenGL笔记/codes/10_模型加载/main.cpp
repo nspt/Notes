@@ -18,6 +18,7 @@
 #include "glm/detail/type_vec.hpp"
 #include "RenderObject.h"
 #include "Light.h"
+#include "Model.h"
 
 static constexpr int win_width = 800;
 static constexpr int win_height = 600;
@@ -180,6 +181,7 @@ auto initContextAndWindow()
     printOpenGLInfo();
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     
     auto win_data = std::make_unique<WinData>();
     glfwSetWindowUserPointer(window, win_data.get());
@@ -244,22 +246,22 @@ std::shared_ptr<Mesh> createMesh()
     
     std::vector<unsigned int> indices = {
         // front
-        0, 2, 1,
+        0, 1, 2,
         0, 2, 3,
         // left
-        4, 6, 5,
+        4, 5, 6,
         4, 6, 7,
         // right
-        8, 10, 9,
+        8, 9, 10,
         8, 10, 11,
         // back
-        12, 14, 13,
+        12, 13, 14,
         12, 14, 15,
         // top
-        16, 18, 17,
+        16, 17, 18,
         16, 18, 19,
         // bottom
-        20, 22, 21,
+        20, 21, 22,
         20, 22, 23,
     };
 
@@ -325,8 +327,38 @@ void renderCubes(WinData &win_data, std::vector<RenderObject> &cubes)
     program->setMat4("view", win_data.camera.viewMatrix());
     for (auto &cube : cubes) {
         program->setMat4("model", cube.transform_);
-        cube.material_->apply();
+        cube.material_->apply(*cube.material_->program_);
         cube.mesh_->draw();
+    }
+}
+
+void renderModel(WinData &win_data, Model &model)
+{
+    auto projection = glm::perspective(
+        glm::radians(win_data.fov),
+        static_cast<float>(win_width) / static_cast<float>(win_height),
+        0.1f,
+        100.0f
+    );
+    model.program_->use();
+    model.program_->setMat4("projection", projection);
+    model.program_->setMat4("view", win_data.camera.viewMatrix());
+    for (auto &obj : model.objects_) {
+        if (!obj->material_->program_) {
+            model.program_->setMat4("model", obj->transform_ * model.transform_);
+            obj->material_->apply(*model.program_);
+        } else {
+            auto program = obj->material_->program_;
+            program->use();
+            program->setMat4("projection", projection);
+            program->setMat4("view", win_data.camera.viewMatrix());
+            program->setMat4("model", obj->transform_ * model.transform_);
+            obj->material_->apply(*program);
+        }
+        obj->mesh_->draw();
+        if (obj->material_->program_) {
+            model.program_->use();
+        }
     }
 }
 
@@ -407,12 +439,12 @@ int main(int argc, char* argv[])
         auto cube_mesh = createMesh();
         auto cube_material = std::make_shared<Material>();
         cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/09multiple_lights.vert",
-            resourceDir + "shaders/09multiple_lights.frag"
+            resourceDir + "shaders/10model.vert",
+            resourceDir + "shaders/10model.frag"
         );
         cube_material->program_->setUniformBlockBinding("LightData", 0);
-        cube_material->diffuse_map_ = std::make_shared<Texture2D>(resourceDir + "/textures/container2.png");
-        cube_material->specular_map_ = std::make_shared<Texture2D>(resourceDir + "/textures/container2_specular.png");
+        cube_material->diffuse_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/container2.png"));
+        cube_material->specular_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/container2_specular.png"));
         cube_material->shininess_ = 128.0f;
 
         auto light_src_material = std::make_shared<Material>();
@@ -427,6 +459,10 @@ int main(int argc, char* argv[])
         RenderObject light_src{};
         light_src.mesh_ = cube_mesh;
         light_src.material_ = light_src_material;
+
+        Model model{ resourceDir + "/model/backpack", "backpack.obj" };
+        model.program_ = cube_material->program_;
+        model.transform_ = glm::scale(model.transform_, glm::vec3{ 0.2f, 0.2f, 0.2f });
     
         win_data->last_time = steady_clock::now();
         for (unsigned frame = 0; !glfwWindowShouldClose(window); ++frame) {
@@ -434,7 +470,8 @@ int main(int argc, char* argv[])
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             applyLightData(*win_data, lights, lightDataUBO);
-            renderCubes(*win_data, cubes);
+            //renderCubes(*win_data, cubes);
+            renderModel(*win_data, model);
             renderLightSrc(*win_data, lights, light_src);
     
             auto now = steady_clock::now();

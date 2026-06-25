@@ -2,6 +2,7 @@
 
 #include "ShaderProgram.h"
 #include "Texture2D.h"
+#include <format>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <memory>
@@ -9,16 +10,28 @@
 class Material {
 public:
     std::shared_ptr<ShaderProgram> program_;
-    std::shared_ptr<Texture2D> diffuse_map_;
-    std::shared_ptr<Texture2D> specular_map_;
+    std::vector<std::shared_ptr<Texture2D>> diffuse_textures_;
+    std::vector<std::shared_ptr<Texture2D>> specular_textures_;
     float shininess_;
 
-    void apply()
+    void apply(ShaderProgram &program)
     {
-        diffuse_map_->bind(0);
-        specular_map_->bind(1);
-        program_->setInt("material.diffuse_map", 0);
-        program_->setInt("material.specular_map", 1);
-        program_->setFloat("material.shininess", shininess_);
+        unsigned bp = 0;
+
+        program.setInt("material.diffuse_count", diffuse_textures_.size());
+        for (unsigned i = 0; i < diffuse_textures_.size(); ++i) {
+            diffuse_textures_[i]->bind(bp);
+            program.setInt(std::format("material.diffuse_texture[{}]", i), bp);
+            ++bp;
+        }
+
+        program.setInt("material.specular_count", specular_textures_.size());
+        for (unsigned i = 0; i < specular_textures_.size(); ++i) {
+            specular_textures_[i]->bind(bp);
+            program.setInt(std::format("material.specular_texture[{}]", i), bp);
+            ++bp;
+        }
+
+        program.setFloat("material.shininess", shininess_);
     }
 };
