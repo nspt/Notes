@@ -36,6 +36,9 @@ Model::Model(const std::string_view &dir, const std::string_view &file)
 
 void Model::processNode(const aiNode *node, const aiScene *scene, const std::string_view &dir)
 {
+    // node->mTransformation 表示 Node 的变换，为简化示例，这里暂未处理 aiNode::mTransformation。
+    // 若模型存在节点层级变换，应将父节点与当前节点的变换矩阵累乘后传递给子节点。
+    // 当前实现忽略。
     for(unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]]; 
         objects_.push_back(processMesh(mesh, scene, dir));			
@@ -57,7 +60,6 @@ std::shared_ptr<RenderObject> Model::processMesh(const aiMesh *mesh, const aiSce
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         Vertex vertex;
-        VertexAttrib va;
         vertex.position.x = mesh->mVertices[i].x;
         vertex.position.y = mesh->mVertices[i].y;
         vertex.position.z = mesh->mVertices[i].z;
@@ -88,9 +90,9 @@ std::shared_ptr<RenderObject> Model::processMesh(const aiMesh *mesh, const aiSce
     obj->mesh_ = std::make_shared<Mesh>(vertices, attributes, indices);
 
     obj->material_ = std::make_shared<Material>();
+    // 若模型未提供 shininess，则使用默认值
     obj->material_->shininess_ = 32.0f;
-    if(mesh->mMaterialIndex >= 0
-        && mesh->mMaterialIndex < scene->mNumMaterials) {
+    if(mesh->mMaterialIndex < scene->mNumMaterials) {
         aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
         obj->material_->diffuse_textures_ = loadTextureFrom(material, scene, aiTextureType_DIFFUSE, dir);
         obj->material_->specular_textures_ = loadTextureFrom(material, scene, aiTextureType_SPECULAR, dir);
