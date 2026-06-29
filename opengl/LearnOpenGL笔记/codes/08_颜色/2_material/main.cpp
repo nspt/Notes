@@ -182,7 +182,7 @@ auto initContextAndWindow()
     };
 }
 
-std::shared_ptr<Mesh> createMesh()
+std::shared_ptr<Mesh> createCubeMesh()
 {
     float x = 0.5f, y = 0.5f, z = 0.5f;
     std::vector<Vertex> vertices = {
@@ -264,7 +264,7 @@ Light createLight()
 RenderObject createCube(const std::string &resourceDir, const glm::mat4 &projection)
 {
     RenderObject obj;
-    obj.mesh_ = createMesh();
+    obj.mesh_ = createCubeMesh();
     obj.material_ = std::make_shared<Material>();
 
     obj.material_->program_ = std::make_shared<ShaderProgram>(
@@ -284,7 +284,7 @@ RenderObject createCube(const std::string &resourceDir, const glm::mat4 &project
 RenderObject createLightCube(const std::string &resourceDir, const glm::mat4 &projection)
 {
     RenderObject obj;
-    obj.mesh_ = createMesh();
+    obj.mesh_ = createCubeMesh();
     obj.material_ = std::make_shared<Material>();
 
     obj.material_->program_ = std::make_shared<ShaderProgram>(
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
             0.1f,
             100.0f
         );
-        auto cube_mesh = createMesh();
+        auto cube_mesh = createCubeMesh();
         auto cube_material = std::make_shared<Material>();
         cube_material->program_ = std::make_shared<ShaderProgram>(
             resourceDir + "shaders/08material.vert.glsl",

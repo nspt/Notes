@@ -154,7 +154,7 @@ GLFWwindow* initContextAndWindow()
     return window;
 }
 
-Mesh createMesh()
+Mesh createCubeMesh()
 {
     float x = 0.5f, y = 0.5f, z = 0.5f;
     std::vector<Vertex> vertices = {
@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
         Texture2D brickTexture{ resourceDir + "textures/brickwall.jpg", 0 };
         Texture2D faceTexture{ resourceDir + "textures/awesomeface.png", 1 };
     
-        auto rectMesh = createMesh();
+        auto rectMesh = createCubeMesh();
     
         glm::vec3 cubePositions[] = {
             glm::vec3( 0.0f,  0.0f,  0.0f), 

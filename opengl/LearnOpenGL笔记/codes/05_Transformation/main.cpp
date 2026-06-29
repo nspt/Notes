@@ -61,7 +61,7 @@ GLFWwindow* initContextAndWindow()
     return window;
 }
 
-Mesh createMesh()
+Mesh createCubeMesh()
 {
     std::vector<Vertex> vertices = {
         {
@@ -113,7 +113,7 @@ try {
     Texture2D brickTexture{ resourceDir + "textures/brickwall.jpg", 0 };
     Texture2D faceTexture{ resourceDir + "textures/awesomeface.png", 1 };
 
-    auto rectMesh = createMesh();
+    auto rectMesh = createCubeMesh();
 
     auto last_time = steady_clock::now();
     int expect_fps = 60;
