@@ -123,10 +123,10 @@ vec4 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec4 ambient, in vec4 
 
 float LinearizeDepth(float depth) 
 {
-    float near = 0.1;
-    float far  = 100.0;
+    float near = 0.1f;
+    float far  = 50.0f;
     float z = depth * 2.0 - 1.0; // back to NDC
-    return (2.0 * near * far) / (far + near - z * (far - near));
+    return ((2.0 * near * far) / (far + near - z * (far - near))) / far;
 }
 
 void main()
@@ -155,6 +155,7 @@ void main()
         vec4 spot_color = calcSpotLights(normal, to_camera, ambient, diffuse, specular);
 
         //out_color = directional_color + point_color + spot_color;
-        out_color = vec4(vec3(LinearizeDepth(gl_FragCoord.z)), 1.0);
+        float dp = LinearizeDepth(gl_FragCoord.z);
+        out_color = vec4(dp, dp, dp, 1.0);
     }
 }
