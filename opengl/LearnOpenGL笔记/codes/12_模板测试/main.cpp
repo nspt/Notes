@@ -37,7 +37,7 @@ struct WinData
     float fov{ 45.0f };
     bool first_mouse{ true };
     double mouse_x{ 0.0 }, mouse_y{ 0.0 };
-    float move_speed{ 25.0f };
+    float move_speed{ 10.0f };
     float rotate_sensitivity{ 0.05f };
     float zoom_sensitivity{ 0.1f };
 };
@@ -186,6 +186,7 @@ auto initContextAndWindow()
         throw std::runtime_error{ "Failed to init GLAD" };
     printOpenGLInfo();
     glEnable(GL_MULTISAMPLE);
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -345,12 +346,42 @@ void render(Model &m, const glm::mat4 &view, const glm::mat4 &proj)
     }
 }
 
+
+void renderOutline(
+    RenderObject &obj,
+    const glm::mat4 &model, const glm::mat4 &view, const glm::mat4 &proj,
+    std::shared_ptr<ShaderProgram> program)
+{
+    if (!program) {
+        program = obj.material_->program_;
+    }
+    program->use();
+    program->setMat4("projection", proj);
+    program->setMat4("view", view);
+    program->setMat4("model", obj.transform_ * model * glm::scale(glm::mat4{ 1.0f }, glm::vec3{ 1.2f, 1.2f, 1.2f }));
+    auto pure_color = obj.material_->pure_color_;
+    auto color = obj.material_->color_;
+    obj.material_->pure_color_ = true;
+    obj.material_->color_ = glm::vec3{ 1.0f, 0.0f, 0.0f };
+    obj.material_->apply(*program);
+    obj.material_->pure_color_ = pure_color;
+    obj.material_->color_ = color;
+    obj.mesh_->draw();
+}
+
+void renderOutline(Model &m, const glm::mat4 &view, const glm::mat4 &proj)
+{
+    for (auto &obj : m.objects_) {
+        renderOutline(*obj, m.transform_, view, proj, m.program_);
+    }
+}
+
 std::vector<RenderObject> createCubes(std::shared_ptr<Mesh> cube_mesh, std::shared_ptr<Material> cube_material)
 {
     std::vector<RenderObject> cubes;
     glm::vec3 cubePositions[] = {
         glm::vec3( 10.0f,  0.0f,  0.0f),
-        //glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3( 10.0f,  1.5f,  0.0f),
         //glm::vec3(-1.5f, -2.2f, -2.5f),
         //glm::vec3(-3.8f, -2.0f, -12.3f),
         //glm::vec3( 2.4f, -0.4f, -3.5f),
@@ -401,8 +432,8 @@ int main(int argc, char* argv[])
         auto cube_mesh = createCubeMesh();
         auto cube_material = std::make_shared<Material>();
         cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/11depth_test.vert",
-            resourceDir + "shaders/11depth_test.frag"
+            resourceDir + "shaders/12stencil_test.vert",
+            resourceDir + "shaders/12stencil_test.frag"
         );
         cube_material->program_->setUniformBlockBinding("LightData", 0);
         cube_material->diffuse_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/container2.png"));
@@ -416,15 +447,37 @@ int main(int argc, char* argv[])
         win_data->last_time = steady_clock::now();
         for (unsigned frame = 0; !glfwWindowShouldClose(window); ++frame) {
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            auto view = win_data->camera.viewMatrix();
 
             applyLightData(*win_data, lights, lightDataUBO);
-            
-            auto view = win_data->camera.viewMatrix();
+
+            // draw model
             render(model, view, win_data->projection);
-            for (auto &cube : cubes) {
-                render(cube, glm::mat4{}, view, win_data->projection, nullptr);
+
+            // draw cubes
+            glStencilFunc(GL_ALWAYS, 1, 0xff);
+            for (auto iter = cubes.begin(); iter != cubes.end(); ++iter) {
+                if (iter + 1 != cubes.end()) {
+                    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+                } else { // skip last cube, which is platform
+                    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+                }
+                render(*iter, glm::mat4{}, view, win_data->projection, nullptr);
             }
+            glStencilFunc(GL_ALWAYS, 0, 0xff);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+            // draw outline of cubes
+            glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+            for (auto iter = cubes.begin(); iter != cubes.end(); ++iter) {
+                if (iter + 1 == cubes.end()) {
+                    continue; // skip last cube, which is platform
+                }
+                renderOutline(*iter, glm::mat4{}, view, win_data->projection, nullptr);
+            }
+            glStencilFunc(GL_ALWAYS, 0, 0xff);
     
             auto now = steady_clock::now();
             win_data->delta_time = now - win_data->last_time;
