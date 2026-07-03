@@ -12,6 +12,7 @@
 #include "Material.h"
 #include "ShaderProgram.h"
 #include "Mesh.h"
+#include "glm/detail/func_geometric.hpp"
 #include "glm/detail/func_trigonometric.hpp"
 #include "Camera.h"
 #include "glm/detail/type_mat.hpp"
@@ -204,6 +205,36 @@ auto initContextAndWindow()
     };
 }
 
+std::shared_ptr<Mesh> createGrassMesh()
+{
+    float x = 0.5f, y = 0.5f, z = 0.5f;
+    std::vector<Vertex> vertices = {
+        { { -x, -y, z }, { 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }},
+        { { x, -y, z }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }},
+        { { x, y, z }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }},
+        { { -x, y, z }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }},
+    };
+
+    std::vector<VertexAttrib> attributes {
+        VertexAttrib {
+            0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<const void*>(offsetof(Vertex, position))
+        },
+        VertexAttrib {
+            1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<const void*>(offsetof(Vertex, normal))
+        },
+        VertexAttrib {
+            2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<const void*>(offsetof(Vertex, texCoord))
+        }
+    };
+    
+    std::vector<unsigned int> indices = {
+        0, 1, 2,
+        0, 2, 3,
+    };
+
+    return std::make_shared<Mesh>(vertices, attributes, indices);
+}
+
 std::shared_ptr<Mesh> createCubeMesh()
 {
     float x = 0.5f, y = 0.5f, z = 0.5f;
@@ -376,37 +407,41 @@ void renderOutline(Model &m, const glm::mat4 &view, const glm::mat4 &proj)
     }
 }
 
-std::vector<RenderObject> createCubes(std::shared_ptr<Mesh> cube_mesh, std::shared_ptr<Material> cube_material)
+std::vector<RenderObject> assembleObjects(
+    std::shared_ptr<Mesh> mesh,
+    std::shared_ptr<Material> material,
+    const std::vector<std::pair<glm::vec3, glm::mat4>> &pos_and_trans)
 {
-    std::vector<RenderObject> cubes;
-    glm::vec3 cubePositions[] = {
-        glm::vec3( 10.0f,  0.0f,  0.0f),
-        glm::vec3( 10.0f,  1.5f,  0.0f),
-        //glm::vec3(-1.5f, -2.2f, -2.5f),
-        //glm::vec3(-3.8f, -2.0f, -12.3f),
-        //glm::vec3( 2.4f, -0.4f, -3.5f),
-        //glm::vec3(-1.7f,  3.0f, -7.5f),
-        //glm::vec3( 1.3f, -2.0f, -2.5f),
-        //glm::vec3( 1.5f,  2.0f, -2.5f),
-        //glm::vec3( 1.5f,  0.2f, -1.5f),
-        //glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
-    for (auto &pos : cubePositions) {
-        cubes.push_back(RenderObject{});
-        auto &cube{ cubes.back() };
-        cube.mesh_ = cube_mesh;
-        cube.material_ = cube_material;
-        cube.transform_ = glm::translate(cube.transform_, pos);
+    std::vector<RenderObject> objs;
+    objs.reserve(pos_and_trans.size());
+    
+    for (auto &pt : pos_and_trans) {
+        objs.push_back(RenderObject{});
+        auto &obj{ objs.back() };
+        obj.mesh_ = mesh;
+        obj.material_ = material;
+        obj.transform_ = glm::translate(obj.transform_, pt.first);
+        obj.transform_ = obj.transform_ * pt.second;
     }
 
-    cubes.push_back(RenderObject{});
-    auto &cube{ cubes.back() };
-    cube.mesh_ = cube_mesh;
-    cube.material_ = cube_material;
-    cube.transform_ = glm::translate(cube.transform_, glm::vec3{ 0.0f, -52.0f, 0.0f });
-    cube.transform_ = glm::scale(cube.transform_, glm::vec3{ 100.0f, 100.0f, 100.0f });
+    return objs;
+}
 
-    return cubes;
+std::vector<std::pair<RenderObject*, float>> sortObjectsByDistance(WinData &win_data, const std::vector<RenderObject> &objs)
+{
+    auto cam_pos = win_data.camera.pos();
+    std::vector<std::pair<RenderObject*, float>> sorted;
+    sorted.reserve(objs.size());
+    for (auto &obj : objs) {
+        sorted.push_back({
+            const_cast<RenderObject*>(&obj),
+            glm::distance(cam_pos, glm::vec3(obj.transform_[3]))
+        });
+    }
+    std::sort(sorted.begin(), sorted.end(), [cam_pos](auto &a, auto &b) {
+        return a.second > b.second;
+    });
+    return sorted;
 }
 
 int main(int argc, char* argv[])
@@ -429,20 +464,75 @@ int main(int argc, char* argv[])
         UniformBuffer lightDataUBO{ lights };
         lightDataUBO.bindBase(0);
 
+        auto general_shader = std::make_shared<ShaderProgram>(
+            resourceDir + "shaders/13blending.vert",
+            resourceDir + "shaders/13blending.frag"
+        );
+        general_shader->setUniformBlockBinding("LightData", 0);
+
         auto cube_mesh = createCubeMesh();
         auto cube_material = std::make_shared<Material>();
-        cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/12stencil_test.vert",
-            resourceDir + "shaders/12stencil_test.frag"
-        );
-        cube_material->program_->setUniformBlockBinding("LightData", 0);
+        cube_material->program_ = general_shader;
         cube_material->diffuse_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/container2.png"));
         cube_material->specular_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/container2_specular.png"));
         cube_material->shininess_ = 128.0f;
-        auto cubes = createCubes(cube_mesh, cube_material);
+        glm::mat4 platform_mat{ 1.0f };
+        platform_mat = glm::scale(platform_mat, glm::vec3{ 100.0f, 100.0f, 100.0f });
+        auto cubes = assembleObjects(cube_mesh, cube_material,
+            {
+                { glm::vec3{ 10.0f,  0.0f,  0.0f }, glm::mat4{ 1.0f } },
+                { glm::vec3{ 10.0f,  1.5f,  0.0f }, glm::mat4{ 1.0f } },
+                { glm::vec3{ 0.0f, -52.0f, 0.0f }, platform_mat },
+            }
+        );
+
+        auto grass_mesh = createGrassMesh();
+        auto grass_material = std::make_shared<Material>();
+        grass_material->program_ = general_shader;
+        grass_material->diffuse_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/grass.png"));
+        grass_material->diffuse_textures_[0]->setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+        glm::mat4 grass_mat{ 1.0f };
+        grass_mat = glm::scale(grass_mat, glm::vec3{ 2.0f, 2.0f, 2.0f });
+        auto grasses = assembleObjects(grass_mesh, grass_material,
+            {
+                { glm::vec3{ 7.0f,  -1.0f,  -4.0f }, grass_mat },
+                { glm::vec3{ 0.0f,  -1.0f,  -4.0f }, grass_mat },
+                { glm::vec3{ -7.0f, -1.0f, -3.0f }, grass_mat },
+                { glm::vec3{ -7.0f, -1.0f, 0.0f }, grass_mat },
+                { glm::vec3{ 7.0f,  -1.0f,  0.0f }, grass_mat },
+                { glm::vec3{ -7.0f, -1.0f, 3.0f }, grass_mat },
+                { glm::vec3{ 0.0f, -1.0f, 3.0f }, grass_mat },
+                { glm::vec3{ 7.0f,  -1.0f,  4.0f }, grass_mat },
+            }
+        );
+
+        auto window_mesh = grass_mesh;
+        auto window_material = std::make_shared<Material>();
+        window_material->program_ = general_shader;
+        window_material->diffuse_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/window.png"));
+        window_material->diffuse_textures_[0]->setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+        glm::mat4 window_mat{ 1.0f };
+        window_mat = glm::scale(grass_mat, glm::vec3{ 2.0f, 2.0f, 2.0f });
+        auto windows = assembleObjects(window_mesh, window_material,
+            {
+                { glm::vec3{ 7.0f,  -1.0f,  -3.0f }, window_mat },
+                { glm::vec3{ 0.0f,  -1.0f,  -3.0f }, window_mat },
+                { glm::vec3{ -7.0f, -1.0f, -2.0f }, window_mat },
+                { glm::vec3{ -7.0f, -1.0f, 1.0f }, window_mat },
+                { glm::vec3{ 7.0f,  -1.0f,  1.0f }, window_mat },
+                { glm::vec3{ -7.0f, -1.0f, 4.0f }, window_mat },
+                { glm::vec3{ 0.0f, -1.0f, 4.0f }, window_mat },
+                { glm::vec3{ 7.0f,  -1.0f,  5.0f }, window_mat },
+            }
+        );
+
+        std::vector<RenderObject> semiTranspantObjs;
+        semiTranspantObjs.reserve(grasses.size() + windows.size());
+        semiTranspantObjs.insert(semiTranspantObjs.end(), grasses.begin(), grasses.end());
+        semiTranspantObjs.insert(semiTranspantObjs.end(), windows.begin(), windows.end());
 
         Model model{ resourceDir + "/model/backpack", "backpack.obj" };
-        model.program_ = cube_material->program_;
+        model.program_ = general_shader;
     
         win_data->last_time = steady_clock::now();
         for (unsigned frame = 0; !glfwWindowShouldClose(window); ++frame) {
@@ -480,7 +570,18 @@ int main(int argc, char* argv[])
             }
             glStencilFunc(GL_ALWAYS, 0, 0xff);
             glDepthFunc(GL_LESS);
-    
+
+            // draw grasses
+            glEnable(GL_BLEND);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+            glDisable(GL_CULL_FACE);
+            auto sorted = sortObjectsByDistance(*win_data, semiTranspantObjs);
+            for (auto &obj : sorted) {
+                render(*obj.first, glm::mat4{}, view, win_data->projection, nullptr);
+            }
+            glEnable(GL_CULL_FACE);
+            glDisable(GL_BLEND);
+
             auto now = steady_clock::now();
             win_data->delta_time = now - win_data->last_time;
             win_data->last_time = now;

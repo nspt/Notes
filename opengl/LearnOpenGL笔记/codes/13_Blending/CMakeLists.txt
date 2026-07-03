@@ -1,0 +1,2 @@
+add_subdirectory(0_grass_discard)
+add_subdirectory(1_windows)
