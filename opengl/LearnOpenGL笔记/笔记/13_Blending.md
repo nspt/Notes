@@ -49,7 +49,7 @@ $$
 Color_{result} = \textcolor{green}{Color_{src}} * \textcolor{green}{Factor_{src}} + \textcolor{red}{Color_{dst}} * \textcolor{red}{Factor_{dst}}
 $$
 
-其中源（src）表示片段着色器输出的颜色，目标（dst）表示当前颜色缓冲区中的颜色。此公式的具体实现可以被设置，比如系数（Factor）值的来源，源部分和目标部分的混合方式（默认为加，也可以是减、反向减、取最值）。
+其中源（src）表示片段着色器输出的颜色，目标（dst）表示当前颜色缓存中的颜色。此公式的具体实现可以被设置，比如系数（Factor）值的来源，源部分和目标部分的混合方式（默认为加，也可以是减、反向减、取最值）。
 
 > 系数是 `vec4` 类型，对于 `GL_SRC_ALPHA`、`GL_DST_ALPHA` 等模式，alpha 会自动扩展为 (a,a,a,a) 作为混合系数。
 

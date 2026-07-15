@@ -38,7 +38,7 @@ Uniform Block 是用于从 CPU 侧向 shader 传递大量数据而存在的，�
 2. CPU 侧创建 UBO 对象（*Uniform Buffer Object*）
 3. CPU 侧将 Uniform Block 与某个绑定点关联
 4. CPU 侧将 UBO 绑定到同一个绑定点（从而与 Shader 连接上）
-5. CPU 侧在需要时，更新 UBO 对象的缓冲区数据
+5. CPU 侧在需要时，更新 UBO 对象的缓存数据
 
 ![UBO](images/advanced_glsl_binding_points.png)
 
