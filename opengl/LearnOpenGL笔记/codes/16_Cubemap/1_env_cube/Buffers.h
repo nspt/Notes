@@ -67,6 +67,5 @@ public:
 
     void bindBase(GLuint bindingPoint) const;
     void bindRange(GLuint bindingPoint, GLuint offset, GLuint size) const;
-    void setSubData(GLintptr offset, GLsizeiptr size, const void *data) const;
     static void unbindBase(GLuint bindingPoint);
 };

@@ -372,7 +372,7 @@ LightData createLightData()
 
 void applyLightData([[maybe_unused]] WinData &win_data, LightData &lights, UniformBuffer &lightDataUBO)
 {
-    lightDataUBO.setSubData(0, sizeof(LightData), &lights);
+    lightDataUBO.setSubData(0, &lights, sizeof(LightData));
 }
 
 void render(

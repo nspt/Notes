@@ -80,11 +80,6 @@ UniformBuffer::UniformBuffer(size_t sizeBytes)
     setData(nullptr, sizeBytes, GL_DYNAMIC_DRAW);
 }
 
-void UniformBuffer::setSubData(GLintptr offset, GLsizeiptr size, const void *data) const
-{
-    glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data); 
-}
-
 void UniformBuffer::bindBase(GLuint bindingPoint) const
 {
     glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, id_);
