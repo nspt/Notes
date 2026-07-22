@@ -21,6 +21,7 @@
 #include "Light.h"
 #include "Model.h"
 #include "FrameBuffer.h"
+#include "TextureCubeMap.h"
 #include <stb_image.h>
 
 static constexpr int win_width = 800;
@@ -34,7 +35,7 @@ struct WinData
     glm::mat4 projection = glm::perspective(
         glm::radians(45.0f),
         static_cast<float>(win_width) / static_cast<float>(win_height),
-        1.0f,
+        0.1f,
         100000.0f
     );
     float fov{ 45.0f };
@@ -592,7 +593,7 @@ int main(int argc, char* argv[])
             1, -8, 1,
             1, 1, 1
         };
-        quad_obj.material_->program_->setFLoatArr("kernel", edge_kernel, 9);
+        quad_obj.material_->program_->setFLoatArr("kernel", identity_kernel, 9);
         quad_obj.material_->diffuse_textures_.push_back(
             std::make_shared<Texture2D>(
                 win_width, win_height, GL_RGB
@@ -607,60 +608,113 @@ int main(int argc, char* argv[])
             std::cerr << "FBO is not completed" << std::endl;
             abort();
         }
+
+        RenderObject skybox;
+        skybox.mesh_ = cube_mesh;
+        skybox.material_ = std::make_shared<Material>();
+        std::vector<std::string> faces
+        {
+            resourceDir + "/textures/skybox/right.jpg",
+            resourceDir + "/textures/skybox/left.jpg",
+            resourceDir + "/textures/skybox/top.jpg",
+            resourceDir + "/textures/skybox/bottom.jpg",
+            resourceDir + "/textures/skybox/front.jpg",
+            resourceDir + "/textures/skybox/back.jpg"
+        };
+        auto cubemap_texture = std::make_shared<TextureCubeMap>(faces, false);
+        skybox.material_->diffuse_textures_.push_back(cubemap_texture);
+        skybox.material_->program_ = std::make_shared<ShaderProgram>(
+            resourceDir + "shaders/16cubemap.vert",
+            resourceDir + "shaders/16cubemap.frag"
+        );
     
         win_data->last_time = steady_clock::now();
         for (unsigned frame = 0; !glfwWindowShouldClose(window); ++frame) {
+            auto draw_scene = [&]() {
+                glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+                auto view = win_data->camera.viewMatrix();
+    
+                applyLightData(*win_data, lights, lightDataUBO);
+    
+                // draw model
+                render(model, view, win_data->projection);
+    
+                // draw cubes
+                glStencilFunc(GL_ALWAYS, 1, 0xff);
+                for (auto iter = cubes.begin(); iter != cubes.end(); ++iter) {
+                    if (iter + 1 != cubes.end()) {
+                        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+                    } else { // skip last cube, which is platform
+                        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+                    }
+                    render(*iter, glm::mat4{}, view, win_data->projection, nullptr);
+                }
+                glStencilFunc(GL_ALWAYS, 0, 0xff);
+                glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    
+                // draw outline of cubes
+                glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+                glDepthFunc(GL_ALWAYS);
+                for (auto iter = cubes.begin(); iter != cubes.end(); ++iter) {
+                    if (iter + 1 == cubes.end()) {
+                        continue; // skip last cube, which is platform
+                    }
+                    renderOutline(*iter, glm::mat4{}, view, win_data->projection, nullptr);
+                }
+                glStencilFunc(GL_ALWAYS, 0, 0xff);
+                glDepthFunc(GL_LESS);
+
+                // draw skybox
+                auto no_trans_view = glm::mat4(glm::mat3(view));
+                glDisable(GL_CULL_FACE);
+                glDepthFunc(GL_LEQUAL);
+                skybox.material_->diffuse_textures_[0]->bind(0);
+                skybox.material_->program_->setInt("skybox", 0);
+                render(skybox, glm::scale(glm::mat4{}, glm::vec3{ 10, 10, 10 }), no_trans_view, win_data->projection, nullptr);
+                glDepthFunc(GL_LESS);
+    
+                // draw transparent objects
+                glEnable(GL_BLEND);
+                glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+                auto sorted = sortObjectsByDistance(*win_data, semiTranspantObjs);
+                for (auto &obj : sorted) {
+                    render(*obj.first, glm::mat4{}, view, win_data->projection, nullptr);
+                }
+                glDisable(GL_BLEND);
+                glEnable(GL_CULL_FACE);
+            };
+
+            // draw backward to texture
+            auto cam = win_data->camera;
+            auto proj = win_data->projection;
+
+            win_data->camera.yaw(180);
+            win_data->camera.pitch(-2 * win_data->camera.pitch());
+            win_data->projection = glm::perspective(
+                glm::radians(45.0f),
+                static_cast<float>(win_width) / (static_cast<float>(win_height) / 2.0f),
+                0.1f,
+                100000.0f
+            );
+
             fbo.bind();
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            auto view = win_data->camera.viewMatrix();
-
-            applyLightData(*win_data, lights, lightDataUBO);
-
-            // draw model
-            render(model, view, win_data->projection);
-
-            // draw cubes
-            glStencilFunc(GL_ALWAYS, 1, 0xff);
-            for (auto iter = cubes.begin(); iter != cubes.end(); ++iter) {
-                if (iter + 1 != cubes.end()) {
-                    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-                } else { // skip last cube, which is platform
-                    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-                }
-                render(*iter, glm::mat4{}, view, win_data->projection, nullptr);
-            }
-            glStencilFunc(GL_ALWAYS, 0, 0xff);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-            // draw outline of cubes
-            glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-            glDepthFunc(GL_ALWAYS);
-            for (auto iter = cubes.begin(); iter != cubes.end(); ++iter) {
-                if (iter + 1 == cubes.end()) {
-                    continue; // skip last cube, which is platform
-                }
-                renderOutline(*iter, glm::mat4{}, view, win_data->projection, nullptr);
-            }
-            glStencilFunc(GL_ALWAYS, 0, 0xff);
-            glDepthFunc(GL_LESS);
-
-            // draw grasses
-            glEnable(GL_BLEND);
-            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
-            glDisable(GL_CULL_FACE);
-            auto sorted = sortObjectsByDistance(*win_data, semiTranspantObjs);
-            for (auto &obj : sorted) {
-                render(*obj.first, glm::mat4{}, view, win_data->projection, nullptr);
-            }
-            glEnable(GL_CULL_FACE);
-            glDisable(GL_BLEND);
-
+            draw_scene();
             fbo.unbind();
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            render(quad_obj, glm::mat4{}, glm::mat4{}, glm::mat4{}, nullptr);
+
+            win_data->camera = cam;
+            win_data->projection = proj;
+
+            // draw scene
+            draw_scene();
+
+            // draw mirror
+            render(quad_obj, glm::scale(glm::translate(
+                        glm::mat4{}, glm::vec3{ 0.0f, 0.75f, 0.0f }),
+                    glm::vec3{ 0.5f, 0.25f, 1.0f }),
+                glm::mat4{}, glm::mat4{}, nullptr
+            );
 
             auto now = steady_clock::now();
             win_data->delta_time = now - win_data->last_time;

@@ -4,9 +4,6 @@ in vec2 v_tex_coord;
 
 out vec4 out_color;
 
-uniform float viewport_width;
-uniform float viewport_height;
-
 struct Material {
     sampler2D diffuse_texture[4];
     int diffuse_count;
@@ -22,18 +19,16 @@ uniform float kernel[9];
 
 void main()
 {
-    float x_offset = 1.0 / viewport_width;
-    float y_offset = 1.0 / viewport_height;
     vec2 offsets[9] = vec2[](
-        vec2(-x_offset,  y_offset), // top-left
-        vec2( 0.0f,      y_offset), // top-center
-        vec2( x_offset,  y_offset), // top-right
-        vec2(-x_offset,  0.0f),   // center-left
-        vec2( 0.0f,      0.0f),   // center-center
-        vec2( x_offset,  0.0f),   // center-right
-        vec2(-x_offset, -y_offset), // bottom-left
-        vec2( 0.0f,     -y_offset), // bottom-center
-        vec2( x_offset, -y_offset)  // bottom-right    
+        vec2(-1.0,   1.0), // top-left
+        vec2( 0.0f,  1.0), // top-center
+        vec2( 1.0,   1.0), // top-right
+        vec2(-1.0,   0.0f), // center-left
+        vec2( 0.0f,  0.0f), // center-center
+        vec2( 1.0,   0.0f), // center-right
+        vec2(-1.0,  -1.0), // bottom-left
+        vec2( 0.0f, -1.0), // bottom-center
+        vec2( 1.0,  -1.0)  // bottom-right
     );
 
     // avoid optimize
@@ -44,15 +39,13 @@ void main()
         out_color = vec4(1.0);
     }
 
-    vec3 sample_texel[9];
-    if (material.diffuse_count > 0) {
-        for(int i = 0; i < 9; i++) {
-            sample_texel[i] = vec3(texture(material.diffuse_texture[0], v_tex_coord.xy + offsets[i]));
-        }
-    }
     vec3 color = vec3(0.0);
-    for(int i = 0; i < 9; i++) {
-        color += sample_texel[i] * kernel[i];
+    if (material.diffuse_count > 0) {
+        vec2 texelSize = 1.0 / vec2(textureSize(material.diffuse_texture[0], 0));
+        for(int i = 0; i < 9; i++) {
+            vec2 uv = v_tex_coord.xy + offsets[i] * texelSize;
+            color += texture(material.diffuse_texture[0], uv).rgb * kernel[i];
+        }
     }
     
     out_color = vec4(color, 1.0);

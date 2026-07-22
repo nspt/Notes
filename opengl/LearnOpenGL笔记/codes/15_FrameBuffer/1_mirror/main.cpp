@@ -592,8 +592,6 @@ int main(int argc, char* argv[])
             1, -8, 1,
             1, 1, 1
         };
-        quad_obj.material_->program_->setFloat("viewport_width", static_cast<float>(win_width));
-        quad_obj.material_->program_->setFloat("viewport_height", static_cast<float>(win_height));
         quad_obj.material_->program_->setFLoatArr("kernel", identity_kernel, 9);
         quad_obj.material_->diffuse_textures_.push_back(
             std::make_shared<Texture2D>(
