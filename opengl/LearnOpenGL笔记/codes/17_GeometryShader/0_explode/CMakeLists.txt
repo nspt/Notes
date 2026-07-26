@@ -1,0 +1,22 @@
+add_executable(explode)
+target_compile_features(explode PRIVATE cxx_std_20)
+target_sources(explode
+    PRIVATE
+        main.cpp
+        Mesh.h Mesh.cpp
+        ShaderProgram.h ShaderProgram.cpp
+        Texture.h Texture.cpp
+        Texture2D.h Texture2D.cpp
+        TextureCubeMap.h TextureCubeMap.cpp
+        Camera.h Camera.cpp
+        Buffers.h Buffers.cpp
+        Light.h
+        Material.h
+        RenderObject.h
+        Model.h Model.cpp
+        FrameBuffer.h
+)
+target_link_libraries(explode
+    PRIVATE
+        glad glfw stb_image glm assimp
+)
