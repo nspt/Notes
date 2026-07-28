@@ -49,16 +49,6 @@ GLuint VertexArray::id() const
     return id_;
 }
 
-VertexBuffer::VertexBuffer()
-    : Buffer{ GL_ARRAY_BUFFER }
-{
-}
-
-IndexBuffer::IndexBuffer()
-    : Buffer{ GL_ELEMENT_ARRAY_BUFFER }
-{
-}
-
 Mesh::Mesh(std::span<const Vertex> vertices,
            std::span<const VertexAttrib> vertexAttributes,
            std::span<const std::uint32_t> indices)

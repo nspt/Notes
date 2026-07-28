@@ -74,6 +74,16 @@ GLenum Buffer::target() const
     return target_;
 }
 
+VertexBuffer::VertexBuffer()
+    : Buffer{ GL_ARRAY_BUFFER }
+{
+}
+
+IndexBuffer::IndexBuffer()
+    : Buffer{ GL_ELEMENT_ARRAY_BUFFER }
+{
+}
+
 UniformBuffer::UniformBuffer(size_t sizeBytes)
     : Buffer{ GL_UNIFORM_BUFFER }
 {
