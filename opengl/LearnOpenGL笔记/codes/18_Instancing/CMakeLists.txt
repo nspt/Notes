@@ -1,0 +1,2 @@
+add_subdirectory(0_no_instance)
+add_subdirectory(1_instance)
