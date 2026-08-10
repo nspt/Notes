@@ -44,16 +44,16 @@ Texture2D::Texture2D(int width, int height, GLenum format)
 
 void Texture2D::init(void *data, int width, int height, GLenum format) noexcept
 {
-    width_ = width;
-    height_ = height;
-    format_ = format;
+    data_->width_ = width;
+    data_->height_ = height;
+    data_->format_ = format;
 
-    glGenTextures(1, &id_);
-    glBindTexture(GL_TEXTURE_2D, id_);
+    glGenTextures(1, &data_->id_);
+    glBindTexture(GL_TEXTURE_2D, data_->id_);
 
     glTexImage2D(GL_TEXTURE_2D, 0,
-        format_, width_, height_, 0,
-        format_, GL_UNSIGNED_BYTE, data
+        data_->format_, data_->width_, data_->height_, 0,
+        data_->format_, GL_UNSIGNED_BYTE, data
     );
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

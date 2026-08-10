@@ -1,6 +1,6 @@
 #version 330 core
 
-in VS_OUT {
+in GS_OUT {
     vec3 v_world_pos;
     vec3 v_world_normal;
     vec2 v_tex_coord;

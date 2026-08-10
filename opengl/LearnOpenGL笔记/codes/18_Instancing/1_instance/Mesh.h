@@ -2,7 +2,6 @@
 
 #include "Buffers.h"
 #include <memory>
-#include <span>
 #include <optional>
 
 class VertexArray {
@@ -30,22 +29,27 @@ private:
 
 class Mesh {
 public:
+    Mesh();
     Mesh(VertexBuffer vbo, IndexBuffer ebo, std::optional<InstanceBuffer> ibo = std::nullopt);
+
+    Mesh(const Mesh &rhs);
+    Mesh(Mesh &&rhs) = default;
+
+    Mesh& operator=(const Mesh &rhs);
+    Mesh& operator=(Mesh &&rhs) = default;
 
     void bind() const;
     static void unbind();
     void draw(GLsizei count = 1) const;
     void draw(const InstanceBuffer &ibo) const;
 
-    VertexBuffer &vertexBuffer();
     const VertexBuffer &vertexBuffer() const;
 
-    IndexBuffer &indexBuffer();
     const IndexBuffer &indexBuffer() const;
 
     void setInstanceBuffer(InstanceBuffer ibo);
-    InstanceBuffer &instanceBuffer();
     const InstanceBuffer &instanceBuffer() const;
+    size_t instanceCount() const;
 
 private:
     void setupVertexAttributes(const VertexBuffer &vbo) const;

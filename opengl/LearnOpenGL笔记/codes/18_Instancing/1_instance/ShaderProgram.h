@@ -12,6 +12,7 @@
 
 class ShaderProgram {
 public:
+    ShaderProgram() = default;
     ShaderProgram(const std::filesystem::path& vertexShaderPath,
                   const std::filesystem::path& fragmentShaderPath,
                   const std::filesystem::path& geometryShaderPath = std::filesystem::path{});
@@ -63,5 +64,5 @@ private:
                 glDeleteProgram(p->id_);
             delete p;
         }
-    };;
+    };
 };

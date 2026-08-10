@@ -662,11 +662,11 @@ int main(int argc, char* argv[])
             auto draw_scene = [&]() {
                 glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
+
                 auto view = win_data->camera.viewMatrix();
-    
+
                 applyLightData(*win_data, lights, lightDataUBO);
-    
+
                 // draw backpack
                 render(backpack, view, win_data->projection);
                 

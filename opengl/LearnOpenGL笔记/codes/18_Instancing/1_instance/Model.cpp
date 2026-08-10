@@ -2,6 +2,7 @@
 #include "Buffers.h"
 #include "Material.h"
 #include "RenderObject.h"
+#include "ShaderProgram.h"
 #include "Texture2D.h"
 #include "assimp/material.h"
 #include "assimp/scene.h"
@@ -14,9 +15,10 @@
 
 using namespace std::string_literals;
 
-std::map<std::string, std::weak_ptr<Texture2D>> Model::s_loaded_textures;
+std::map<std::string, Texture> Model::s_loaded_textures;
 
-Model::Model(const std::string_view &dir, const std::string_view &file)
+Model::Model(const std::string_view &dir, const std::string_view &file, ShaderProgram shader_program, bool flipUV)
+    : program_{ shader_program }
 {
     std::string path{ dir };
     path.push_back('/');
@@ -25,7 +27,7 @@ Model::Model(const std::string_view &dir, const std::string_view &file)
     Assimp::Importer importer;
     const aiScene *scene = importer.ReadFile(
         path.c_str(),
-        aiProcess_Triangulate | aiProcess_FlipUVs
+        flipUV ? (aiProcess_Triangulate | aiProcess_FlipUVs) : aiProcess_Triangulate
     );
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -49,10 +51,8 @@ void Model::processNode(const aiNode *node, const aiScene *scene, const std::str
     }
 }
 
-std::shared_ptr<RenderObject> Model::processMesh(const aiMesh *mesh, const aiScene *scene, const std::string_view &dir)
+RenderObject Model::processMesh(const aiMesh *mesh, const aiScene *scene, const std::string_view &dir)
 {
-    auto obj = std::make_shared<RenderObject>();
-
     std::vector<Vertex> vertices;
     std::vector<std::uint32_t> indices;
     if (!mesh->HasTextureCoords(0))
@@ -77,54 +77,49 @@ std::shared_ptr<RenderObject> Model::processMesh(const aiMesh *mesh, const aiSce
         for(unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
-    obj->mesh_ = std::make_shared<Mesh>(
-        VertexBuffer{ vertices },
-        IndexBuffer{ indices },
-        std::nullopt
-    );
 
-    obj->material_ = std::make_shared<Material>();
+    VertexBuffer vbo{ vertices };
+    IndexBuffer ebo{ indices };
+
+    Material material;
     // 若模型未提供 shininess，则使用默认值
-    obj->material_->shininess_ = 32.0f;
+    material.shininess_ = 32.0f;
     if(mesh->mMaterialIndex < scene->mNumMaterials) {
-        aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-        obj->material_->diffuse_textures_ = loadTextureFrom(material, scene, aiTextureType_DIFFUSE, dir);
-        obj->material_->specular_textures_ = loadTextureFrom(material, scene, aiTextureType_SPECULAR, dir);
-        material->Get(AI_MATKEY_SHININESS, obj->material_->shininess_);
+        aiMaterial *m = scene->mMaterials[mesh->mMaterialIndex];
+        material.diffuse_textures_ = loadTextureFrom(m, scene, aiTextureType_DIFFUSE, dir);
+        material.specular_textures_ = loadTextureFrom(m, scene, aiTextureType_SPECULAR, dir);
+        m->Get(AI_MATKEY_SHININESS, material.shininess_);
     }
 
-    return obj;
+    return RenderObject{
+        material, Mesh{ vbo, ebo }
+    };
 }
 
-std::vector<std::shared_ptr<Texture>> Model::loadTextureFrom(const aiMaterial *material, const aiScene *scene, aiTextureType type, const std::string_view &dir)
+std::vector<Texture> Model::loadTextureFrom(const aiMaterial *material, const aiScene *scene, aiTextureType type, const std::string_view &dir)
 {
     std::string d{ dir };
     d.push_back('/');
-    std::vector<std::shared_ptr<Texture>> textures;
+    std::vector<Texture> textures;
     for(unsigned i = 0; i < material->GetTextureCount(type); ++i)
     {
         aiString str;
         material->GetTexture(type, i, &str);
         std::string path = d + str.C_Str();
-        bool skip = false;
-        auto iter = s_loaded_textures.find(path);
-        if (iter != s_loaded_textures.end()) {
-            if (auto p = iter->second.lock()) {
-                skip = true;
-                textures.push_back(p);
-            } else {
-                s_loaded_textures.erase(iter);
-            }
-        }
-        if(!skip)
-        {
-            auto texture = std::make_shared<Texture2D>(path);
-            textures.push_back(texture);
-            s_loaded_textures.insert(
-                std::pair<std::string, std::weak_ptr<Texture2D>>(path, texture)
-            );
+        if (auto iter = s_loaded_textures.find(path); iter != s_loaded_textures.end()) {
+            textures.push_back(iter->second);
+        } else {
+            textures.push_back(Texture2D{ path });
+            s_loaded_textures.insert_or_assign(path, textures.back());
         }
     }
 
     return textures;
+}
+
+void Model::setInstances(InstanceBuffer ibo)
+{
+    for (auto &obj : objects_) {
+        obj.mesh_.setInstanceBuffer(ibo);
+    }
 }

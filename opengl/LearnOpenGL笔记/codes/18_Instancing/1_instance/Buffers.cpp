@@ -1,13 +1,17 @@
 #include "Buffers.h"
 #include "ShaderProgram.h"
 #include "glm/detail/type_mat.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 #include <memory>
 #include <stdexcept>
 #include <array>
+#include <vector>
 
 Buffer::Buffer(GLenum target)
 {
+    data_->target_ = target;
     glGenBuffers(1, &data_->id_);
     if (data_->id_ == 0) {
         throw std::runtime_error("Failed to generate buffer");
@@ -103,36 +107,77 @@ size_t IndexBuffer::count() const
     return count_;
 }
 
-InstanceBuffer::InstanceBuffer(std::span<const glm::mat4> instances, GLenum usage)
+InstanceBuffer::InstanceBuffer()
+    : Buffer{ GL_ARRAY_BUFFER }
+{}
+
+InstanceBuffer::InstanceBuffer(const InstanceData &instance, GLenum usage)
+    : InstanceBuffer{ std::vector<InstanceData>{ instance }, usage }
+{}
+
+InstanceBuffer::InstanceBuffer(std::initializer_list<const InstanceData> instances, GLenum usage)
+    : InstanceBuffer{ std::vector<InstanceData>{ instances.begin(), instances.end() }, usage }
+{}
+
+InstanceBuffer::InstanceBuffer(std::span<const InstanceData> instances, GLenum usage)
+    : InstanceBuffer{ std::vector<InstanceData>{ instances.begin(), instances.end() }, usage }
+{}
+
+InstanceBuffer::InstanceBuffer(std::vector<InstanceData> instances, GLenum usage)
     : Buffer{ GL_ARRAY_BUFFER }
 {
     setData(instances, usage);
 }
 
-void InstanceBuffer::setData(std::span<const glm::mat4> instances, GLenum usage)
+void InstanceBuffer::setData(std::vector<InstanceData> instances, GLenum usage)
 {
+    std::vector<glm::mat4> models;
+    models.reserve(instances.size());
+    for (auto &instance : instances) {
+        glm::mat4 m{ 1.0f };
+        m = glm::translate(m, instance.traslation_);
+        m = m * glm::mat4_cast(instance.rotation_);
+        m = glm::scale(m, instance.scale_);
+        models.push_back(m);
+    }
     Buffer::setData(
-        instances.data(),
-        instances.size_bytes(),
+        models.data(),
+        models.size() * sizeof(models[0]),
         usage
     );
-    instances_ = std::vector<glm::mat4>{ instances.begin(), instances.end() };
+    instances_ = std::move(instances);
 }
 
-void InstanceBuffer::update(size_t index, std::span<const glm::mat4> instances)
+void InstanceBuffer::update(size_t index, std::span<const InstanceData> instances)
 {
     if (index + instances.size() > instances_.size()) {
         throw std::out_of_range{ "Instance buffer out of range" };
     }
+    std::vector<glm::mat4> models;
+    models.reserve(instances.size());
+    for (auto &instance : instances) {
+        glm::mat4 m{ 1.0f };
+        m = glm::translate(m, instance.traslation_);
+        m = m * glm::mat4_cast(instance.rotation_);
+        m = glm::scale(m, instance.scale_);
+        models.push_back(m);
+    }
+    Buffer::setSubData(index * sizeof(models[0]), models.data(), models.size() * sizeof(models[0]));
+
     for (size_t i = index; i < instances_.size(); ++i) {
         instances_[i] = instances[i];
     }
-    Buffer::setSubData(index * sizeof(glm::mat4), instances.data(), instances.size_bytes());
+    
 }
 
-const std::vector<glm::mat4> &InstanceBuffer::data() const
+const std::vector<InstanceBuffer::InstanceData> &InstanceBuffer::data() const
 {
     return instances_;
+}
+
+size_t InstanceBuffer::count() const
+{
+    return instances_.size();
 }
 
 UniformBuffer::UniformBuffer(size_t sizeBytes)

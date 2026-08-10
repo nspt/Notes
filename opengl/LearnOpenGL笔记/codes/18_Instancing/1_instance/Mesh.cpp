@@ -31,17 +31,42 @@ GLuint VertexArray::id() const
     return data_->id_;
 }
 
+Mesh::Mesh()
+{
+    vao_.bind();
+    ebo_.bind();
+    setupVertexAttributes(vbo_);
+    setupInstanceAttributes(ibo_);
+    vao_.unbind();
+}
+
 Mesh::Mesh(VertexBuffer vbo, IndexBuffer ebo, std::optional<InstanceBuffer> ibo)
     : vbo_{ std::move(vbo) }, ebo_{ std::move(ebo) },
     ibo_{ ibo.has_value() ?
         std::move(ibo.value()) :
-        InstanceBuffer{ std::array<glm::mat4, 1>{ glm::mat4{ 1.0f } } } 
+        InstanceBuffer{ std::vector<InstanceBuffer::InstanceData>{ {} } }
     }
 {
     vao_.bind();
     ebo_.bind();
     setupVertexAttributes(vbo_);
     setupInstanceAttributes(ibo_);
+    vao_.unbind();
+}
+
+
+Mesh::Mesh(const Mesh &rhs)
+    : Mesh{ rhs.vbo_, rhs.ebo_ }
+{
+    setInstanceBuffer(rhs.ibo_.data());
+    vao_.unbind();
+}
+
+Mesh& Mesh::operator=(const Mesh &rhs)
+{
+    Mesh tmp{ rhs };
+    *this = std::move(tmp);
+    return *this;
 }
 
 void Mesh::bind() const
@@ -67,6 +92,7 @@ void Mesh::draw(GLsizei instances) const
         nullptr,
         instances
     );
+    vao_.unbind();
 }
 
 void Mesh::draw(const InstanceBuffer &ibo) const
@@ -81,18 +107,20 @@ void Mesh::draw(const InstanceBuffer &ibo) const
         static_cast<GLsizei>(ibo.data().size())
     );
     setupInstanceAttributes(ibo_);
+    vao_.unbind();
 }
 
 void Mesh::setInstanceBuffer(InstanceBuffer ibo)
 {
     vao_.bind();
-    setupInstanceAttributes(ibo);
     ibo_ = std::move(ibo);
+    setupInstanceAttributes(ibo_);
+    vao_.unbind();
 }
 
-VertexBuffer &Mesh::vertexBuffer()
+size_t Mesh::instanceCount() const
 {
-    return vbo_;
+    return ibo_.count();
 }
 
 const VertexBuffer &Mesh::vertexBuffer() const
@@ -100,19 +128,9 @@ const VertexBuffer &Mesh::vertexBuffer() const
     return vbo_;
 }
 
-IndexBuffer &Mesh::indexBuffer()
-{
-    return ebo_;
-}
-
 const IndexBuffer &Mesh::indexBuffer() const
 {
     return ebo_;
-}
-
-InstanceBuffer &Mesh::instanceBuffer()
-{
-    return ibo_;
 }
 
 const InstanceBuffer &Mesh::instanceBuffer() const

@@ -26,3 +26,10 @@ struct alignas(16) SpotLight {
     glm::vec4 direction_inner_; // xyz:direction, w:inner cutoff
     glm::vec4 attenuation_outter_;   // x: constant, y: linear, z: quadratic, w: outer cutoff
 };
+
+struct LightData {
+    glm::ivec4 counts{ 0 }; // x: directional, y: point, z: spot
+    DirectionalLight directional[2];
+    SpotLight spot[4];
+    PointLight point[8];
+};

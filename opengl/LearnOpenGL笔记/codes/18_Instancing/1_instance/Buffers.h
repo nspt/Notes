@@ -1,24 +1,18 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <initializer_list>
 #include <memory>
 #include <span>
 #include <vector>
+#include "glm/gtc/quaternion.hpp"
+#include "glm/gtx/quaternion.hpp"
 #include "glm/glm.hpp"
 
 struct Vertex {
     glm::vec3 position;
     glm::vec2 texCoord;
     glm::vec3 normal;
-};
-
-struct VertexAttrib {
-    GLuint index;
-    GLint size;
-    GLenum type;
-    GLboolean normalized;
-    GLsizei stride;
-    const void *pointer;
 };
 
 class Buffer {
@@ -75,13 +69,23 @@ private:
 
 class InstanceBuffer : public Buffer {
 public:
-    InstanceBuffer(std::span<const glm::mat4> instances = std::vector<glm::mat4>{ glm::mat4{ 1.0f } }, GLenum usage = GL_STATIC_DRAW);
+    struct InstanceData {
+        glm::vec3 traslation_{ 0 };
+        glm::quat rotation_{ 1, 0, 0, 0 };
+        glm::vec3 scale_{ 1 };
+    };
+    InstanceBuffer();
+    InstanceBuffer(const InstanceData &instance, GLenum usage = GL_STATIC_DRAW);
+    InstanceBuffer(std::initializer_list<const InstanceData> instances, GLenum usage = GL_STATIC_DRAW);
+    InstanceBuffer(std::span<const InstanceData> instances, GLenum usage = GL_STATIC_DRAW);
+    InstanceBuffer(std::vector<InstanceData> instances, GLenum usage = GL_STATIC_DRAW);
 
-    void setData(std::span<const glm::mat4> instances, GLenum usage = GL_STATIC_DRAW);
-    void update(size_t index, std::span<const glm::mat4> instances);
-    const std::vector<glm::mat4> &data() const;
+    void setData(std::vector<InstanceData> instances, GLenum usage = GL_STATIC_DRAW);
+    void update(size_t index, std::span<const InstanceData> instances);
+    const std::vector<InstanceData> &data() const;
+    size_t count() const;
 private:
-    std::vector<glm::mat4> instances_;
+    std::vector<InstanceData> instances_;
 };
 
 class UniformBuffer : public Buffer {

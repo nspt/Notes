@@ -6,14 +6,15 @@ layout (location = 3) in mat4 a_model;
 
 out vec3 v_tex_coord;
 
-layout (std140) uniform Matrices {
+layout (std140) uniform CamData {
     mat4 view;
     mat4 projection;
-} matrices;
+    vec4 pos;
+} cam_data;
 
 void main()
 {
-    vec4 p = matrices.projection * matrices.view * a_model * vec4(a_pos, 1.0);
+    vec4 p = cam_data.projection * cam_data.view * a_model * vec4(a_pos, 1.0);
     gl_Position = p.xyww;
     v_tex_coord = a_pos;
 }

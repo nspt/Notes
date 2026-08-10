@@ -4,7 +4,7 @@ in vec2 v_tex_coord;
 
 out vec4 out_color;
 
-sampler2D tex;
+uniform sampler2D tex;
 
 uniform float kernel[9];
 
