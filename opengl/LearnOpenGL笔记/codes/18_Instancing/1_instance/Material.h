@@ -12,7 +12,7 @@ public:
     ShaderProgram program_;
     std::vector<Texture> diffuse_textures_;
     std::vector<Texture> specular_textures_;
-    float shininess_;
+    float shininess_{ 32.0f };
     bool pure_color_{ false };
     glm::vec3 color_{ 1.0f };
 

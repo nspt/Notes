@@ -388,50 +388,49 @@ Mesh createCubeMesh(InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::Instanc
     return Mesh{ vbo, ebo, ibo };
 }
 
-std::vector<RenderObject> createGrasses(const std::string &resourceDir, ShaderProgram shader)
+RenderObject createGrasses(const std::string &resourceDir, ShaderProgram shader)
 {
     Material material;
     material.program_ = shader;
     material.diffuse_textures_.push_back(Texture2D(resourceDir + "/textures/grass.png"));
     material.diffuse_textures_[0].setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     std::vector<InstanceBuffer::InstanceData> grasses {
-        { .traslation_ = { 7.0f,  -1.0f,  -4.0f } },
-        { .traslation_ = { 0.0f,  -1.0f,  -4.0f } },
-        { .traslation_ = { -7.0f, -1.0f, -3.0f } },
-        { .traslation_ = { -7.0f, -1.0f, 0.0f } },
-        { .traslation_ = { 7.0f,  -1.0f,  0.0f } },
-        { .traslation_ = { -7.0f, -1.0f, 3.0f } },
-        { .traslation_ = { 0.0f, -1.0f, 3.0f } },
-        { .traslation_ = { 7.0f,  -1.0f,  4.0f } },
+        { .traslation_ = { 7.0f,  1.0f,  -4.0f } },
+        { .traslation_ = { 0.0f,  1.0f,  -4.0f } },
+        { .traslation_ = { -7.0f, 1.0f, -3.0f } },
+        { .traslation_ = { -7.0f, 1.0f, 0.0f } },
+        { .traslation_ = { 7.0f,  1.0f,  0.0f } },
+        { .traslation_ = { -7.0f, 1.0f, 3.0f } },
+        { .traslation_ = { 0.0f,  1.0f, 3.0f } },
+        { .traslation_ = { 7.0f,  1.0f,  4.0f } },
     };
-    return {
-        RenderObject{
-            material, createQuadMesh(InstanceBuffer{ std::move(grasses) })
-        }
+    return RenderObject{
+        material, createQuadMesh(InstanceBuffer{ std::move(grasses) })
     };
 }
 
-std::vector<RenderObject> createWindows(const std::string &resourceDir, ShaderProgram shader)
+std::vector<RenderObject> createGlasses(const std::string &resourceDir, ShaderProgram shader)
 {
     Material material;
     material.program_ = shader;
     material.diffuse_textures_.push_back(Texture2D(resourceDir + "/textures/window.png"));
     material.diffuse_textures_[0].setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    std::vector<InstanceBuffer::InstanceData> windows {
-        { .traslation_ = { 7.0f,  -1.0f,  -4.0f } },
-        { .traslation_ = { 0.0f,  -1.0f,  -4.0f } },
-        { .traslation_ = { -7.0f, -1.0f, -3.0f } },
-        { .traslation_ = { -7.0f, -1.0f, 0.0f } },
-        { .traslation_ = { 7.0f,  -1.0f,  0.0f } },
-        { .traslation_ = { -7.0f, -1.0f, 3.0f } },
-        { .traslation_ = { 0.0f, -1.0f, 3.0f } },
-        { .traslation_ = { 7.0f,  -1.0f,  4.0f } },
+    std::vector<InstanceBuffer::InstanceData> instances {
+        { .traslation_ = { 7.0f,  1.0f,  -4.0f } },
+        { .traslation_ = { 0.0f,  1.0f,  -4.0f } },
+        { .traslation_ = { -7.0f, 1.0f, -3.0f } },
+        { .traslation_ = { -7.0f, 1.0f, 0.0f } },
+        { .traslation_ = { 7.0f,  1.0f,  0.0f } },
+        { .traslation_ = { -7.0f, 1.0f, 3.0f } },
+        { .traslation_ = { 0.0f,  1.0f, 3.0f } },
+        { .traslation_ = { 7.0f,  1.0f,  4.0f } },
     };
-    return {
-        RenderObject{
-            material, createQuadMesh(windows)
-        }
-    };
+    std::vector<RenderObject> glasses;
+    glasses.reserve(instances.size());
+    for (auto &instance : instances) {
+        glasses.push_back(RenderObject{ material, createQuadMesh(instance) });
+    }
+    return glasses;
 }
 
 RenderObject createPlatform(const std::string &resourceDir, ShaderProgram shader)
@@ -527,15 +526,15 @@ void renderOutline(Model &m, const glm::vec3 &color, ShaderProgram *program = nu
     }
 }
 
-std::vector<std::pair<RenderObject*, float>> sortObjectsByDistance(WinData &win_data, const std::vector<RenderObject> &objs)
+std::vector<std::pair<Model*, float>> sortObjectsByDistance(WinData &win_data, const std::vector<Model> &objs)
 {
     auto cam_pos = win_data.camera.pos();
-    std::vector<std::pair<RenderObject*, float>> sorted;
+    std::vector<std::pair<Model*, float>> sorted;
     sorted.reserve(objs.size());
     for (auto &obj : objs) {
         sorted.push_back({
-            const_cast<RenderObject*>(&obj),
-            glm::distance(cam_pos, obj.mesh_.instanceBuffer().data().front().traslation_)
+            const_cast<Model*>(&obj),
+            glm::distance(cam_pos, obj.objects_[0].mesh_.instanceBuffer().data().front().traslation_)
         });
     }
     std::sort(sorted.begin(), sorted.end(), [cam_pos](auto &a, auto &b) {
@@ -586,6 +585,13 @@ int main(int argc, char* argv[])
         };
         explode_shader.setUniformBlockBinding("LightData", 0);
         explode_shader.setUniformBlockBinding("CamData", 1);
+        
+        ShaderProgram skybox_shader{
+            resourceDir + "shaders/skybox_0.vert",
+            resourceDir + "shaders/skybox_0.frag"
+        };
+        skybox_shader.setUniformBlockBinding("CamData", 1);
+        skybox_shader.setInt("skybox", 0);
 
         outline_objects.push_back(createCubes(resourceDir, general_shader));
         objects.push_back(createPlatform(resourceDir, general_shader));
@@ -654,6 +660,28 @@ int main(int argc, char* argv[])
             objects.back().setInstances(std::move(rocks));
         }
 
+        objects.push_back(createGrasses(resourceDir, general_shader));
+
+        RenderObject skybox{
+            Material{}, createCubeMesh()
+        };
+        std::vector<std::string> faces
+        {
+            resourceDir + "/textures/skybox/right.jpg",
+            resourceDir + "/textures/skybox/left.jpg",
+            resourceDir + "/textures/skybox/top.jpg",
+            resourceDir + "/textures/skybox/bottom.jpg",
+            resourceDir + "/textures/skybox/front.jpg",
+            resourceDir + "/textures/skybox/back.jpg"
+        };
+        TextureCubeMap cubemap_texture{ faces, false };
+        skybox.material_.diffuse_textures_.push_back(cubemap_texture);
+
+        auto glasses = createGlasses(resourceDir, general_shader);
+        transparent_objects.insert(transparent_objects.end(),
+            std::make_move_iterator(glasses.begin()),
+            std::make_move_iterator(glasses.end()));
+
         win_data->last_time = steady_clock::now();
         for (unsigned frame = 0; !glfwWindowShouldClose(window.get()); ++frame) {
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -665,6 +693,26 @@ int main(int argc, char* argv[])
             for (auto &m : outline_objects) {
                 render(m);
             }
+
+            // draw skybox
+            glDisable(GL_CULL_FACE);
+            glDepthFunc(GL_LEQUAL);
+            skybox.material_.diffuse_textures_[0].bind(0);
+            skybox_shader.setMat4("no_translate_view", glm::mat4(glm::mat3(win_data->camera.viewMatrix())));
+            skybox_shader.use();
+            skybox.mesh_.draw();
+            glDepthFunc(GL_LESS);
+
+            // draw transparent objects
+            glEnable(GL_BLEND);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+            auto sorted = sortObjectsByDistance(*win_data, transparent_objects);
+            for (auto &obj : sorted) {
+                render(*obj.first);
+            }
+            glDisable(GL_BLEND);
+            glEnable(GL_CULL_FACE);
+
             auto now = steady_clock::now();
             win_data->delta_time = now - win_data->last_time;
             win_data->last_time = now;

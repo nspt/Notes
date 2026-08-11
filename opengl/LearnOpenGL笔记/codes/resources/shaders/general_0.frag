@@ -151,6 +151,9 @@ void main()
             specular = texture(material.specular_texture[0], fs_in.v_tex_coord);
         }
 
+        if(diffuse.a < 0.01 && specular.a < 0.01)
+            discard;
+
         if (material.reflect_cube_exist) {
             vec3 R = reflect(-to_camera, normal);
             env_reflect = texture(material.reflect_cube_texture, R);

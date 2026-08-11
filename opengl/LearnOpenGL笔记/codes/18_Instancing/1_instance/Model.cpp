@@ -94,8 +94,6 @@ RenderObject Model::processMesh(const aiMesh *mesh, const aiScene *scene, const 
     IndexBuffer ebo{ indices };
 
     Material material;
-    // 若模型未提供 shininess，则使用默认值
-    material.shininess_ = 32.0f;
     if(mesh->mMaterialIndex < scene->mNumMaterials) {
         aiMaterial *m = scene->mMaterials[mesh->mMaterialIndex];
         material.diffuse_textures_ = loadTextureFrom(m, scene, aiTextureType_DIFFUSE, dir);
