@@ -14,12 +14,14 @@
 class Model {
 public:
     Model() = default;
+    Model(RenderObject object);
+    Model(std::vector<RenderObject> objects);
     Model(const std::string_view &dir, const std::string_view &file, ShaderProgram program = ShaderProgram{}, bool flipUV = true);
     
     void setInstances(InstanceBuffer ibo);
+    void setShaderProgram(ShaderProgram shader);
 
     std::vector<RenderObject> objects_;
-    ShaderProgram program_;
 private:
     void processNode(const aiNode *node, const aiScene *scene, const std::string_view &dir);
     RenderObject processMesh(const aiMesh *mesh, const aiScene *scene, const std::string_view &dir);

@@ -17,24 +17,36 @@ using namespace std::string_literals;
 
 std::map<std::string, Texture> Model::s_loaded_textures;
 
+Model::Model(RenderObject object)
+    : objects_{ std::move(object) }
+{}
+
+Model::Model(std::vector<RenderObject> objects)
+    : objects_{ std::move(objects) }
+{}
+
 Model::Model(const std::string_view &dir, const std::string_view &file, ShaderProgram shader_program, bool flipUV)
-    : program_{ shader_program }
 {
     std::string path{ dir };
     path.push_back('/');
     path += file;
 
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(
-        path.c_str(),
-        flipUV ? (aiProcess_Triangulate | aiProcess_FlipUVs) : aiProcess_Triangulate
-    );
+    unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals;
+    if (flipUV) {
+        flags |= aiProcess_FlipUVs;
+    }
+    const aiScene *scene = importer.ReadFile(path.c_str(), flags);
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         throw std::runtime_error{ "ERROR::ASSIMP::"s + importer.GetErrorString() };
     }
 
     processNode(scene->mRootNode, scene, dir);
+
+    for (auto &obj : objects_) {
+        obj.material_.program_ = shader_program;
+    }
 }
 
 void Model::processNode(const aiNode *node, const aiScene *scene, const std::string_view &dir)
@@ -121,5 +133,12 @@ void Model::setInstances(InstanceBuffer ibo)
 {
     for (auto &obj : objects_) {
         obj.mesh_.setInstanceBuffer(ibo);
+    }
+}
+
+void Model::setShaderProgram(ShaderProgram shader)
+{
+    for (auto &obj : objects_) {
+        obj.material_.program_ = shader;
     }
 }

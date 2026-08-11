@@ -470,69 +470,61 @@ std::vector<RenderObject> createCubes(const std::string &resourceDir, ShaderProg
     return objects;
 }
 
-void render(RenderObject &obj, GLsizei count = 1, ShaderProgram *program = nullptr)
+void render(RenderObject &obj, ShaderProgram *program = nullptr)
 {
     if (!program) {
         program = &obj.material_.program_;
     }
-    if (program) {
-        program->use();
-        obj.material_.apply(*program);
-    }
-    obj.mesh_.draw(count);
+    program->use();
+    obj.material_.apply(*program);
+    obj.mesh_.draw(obj.mesh_.instanceCount());
 }
 
-void render(Model &m, GLsizei count = 1, ShaderProgram *program = nullptr)
+void render(Model &m, ShaderProgram *program = nullptr)
 {
-    if (!program) {
-        program = &m.program_;
-    }
     for (auto &obj : m.objects_) {
-        render(obj, count, program);
+        render(obj, program);
     }
 }
 
-void renderOutline(RenderObject &obj, const glm::vec3 &color, GLsizei count = 1, ShaderProgram *program = nullptr)
+void renderOutline(RenderObject &obj, const glm::vec3 &color, ShaderProgram *program = nullptr)
 {
     if (!program) {
         program = &obj.material_.program_;
     }
+
+    RenderObject outline{ obj };
+    outline.material_.pure_color_ = true;
+    outline.material_.color_ = color;
+    auto instances = outline.mesh_.instanceBuffer().data();
+    for (auto &instance : instances) {
+        instance.scale_ *= glm::vec3{ 1.2 };
+    }
+    outline.mesh_.setInstanceBuffer(std::move(instances));
+
+    program->use();
+    // draw object itselft
+    glStencilFunc(GL_ALWAYS, 1, 0xff);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    obj.material_.apply(*program);
+    obj.mesh_.draw(obj.mesh_.instanceCount());
+    glStencilFunc(GL_ALWAYS, 0, 0xff);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+    // draw outline of object
     glStencilFunc(GL_NOTEQUAL, 1, 0xff);
     glDepthFunc(GL_ALWAYS);
-    Material outline;
-    outline.pure_color_ = true;
-    outline.color_ = color;
-    if (program) {
-        program->use();
-        outline.apply(*program);
-    }
-    obj.mesh_.draw(count);
+    outline.material_.apply(*program);
+    outline.mesh_.draw(outline.mesh_.instanceCount());
     glStencilFunc(GL_ALWAYS, 0, 0xff);
     glDepthFunc(GL_LESS);
 }
 
-void renderOutline(Model &m, const glm::vec3 &color, GLsizei count = 1, ShaderProgram *program = nullptr)
+void renderOutline(Model &m, const glm::vec3 &color, ShaderProgram *program = nullptr)
 {
-    glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-    glDepthFunc(GL_ALWAYS);
-    Material outline;
-    outline.pure_color_ = true;
-    outline.color_ = color;
     for (auto &obj : m.objects_) {
-        if (program) {
-            program->use();
-            outline.apply(*program);
-        } else if (obj.material_.program_.id() != 0) {
-            obj.material_.program_.use();
-            outline.apply(obj.material_.program_);
-        } else if (m.program_.id() != 0) {
-            m.program_.use();
-            outline.apply(m.program_);
-        }
-        obj.mesh_.draw(count);
+        renderOutline(obj, color, program);
     }
-    glStencilFunc(GL_ALWAYS, 0, 0xff);
-    glDepthFunc(GL_LESS);
 }
 
 std::vector<std::pair<RenderObject*, float>> sortObjectsByDistance(WinData &win_data, const std::vector<RenderObject> &objs)
@@ -567,6 +559,11 @@ int main(int argc, char* argv[])
         auto window = initContextAndWindow();
         WinData *win_data = static_cast<WinData*>(glfwGetWindowUserPointer(window.get()));
 
+
+        std::vector<Model> objects;
+        std::vector<Model> outline_objects;
+        std::vector<Model> transparent_objects;
+
         ShaderProgram general_shader{
             resourceDir + "shaders/general_0.vert",
             resourceDir + "shaders/general_0.frag"
@@ -582,10 +579,17 @@ int main(int argc, char* argv[])
         visual_normal_shader.setUniformBlockBinding("CamData", 1);
         visual_normal_shader.setVec3("normal_color", glm::vec3{ 0, 1, 0 });
 
-        auto cubes = createCubes(resourceDir, general_shader);
-        auto platform = createPlatform(resourceDir, general_shader);
+        ShaderProgram explode_shader {
+            resourceDir + "shaders/explode_0.vert",
+            resourceDir + "shaders/explode_0.frag",
+            resourceDir + "shaders/explode_0.geom"
+        };
+        explode_shader.setUniformBlockBinding("LightData", 0);
+        explode_shader.setUniformBlockBinding("CamData", 1);
 
-        std::vector<Model> flashlights;
+        outline_objects.push_back(createCubes(resourceDir, general_shader));
+        objects.push_back(createPlatform(resourceDir, general_shader));
+
         {
             Model flashlight{ resourceDir + "/model/flash_light", "Flashlight.obj", general_shader, false };
             for (int i = 0; i < win_data->lights.counts.z; ++i) {
@@ -601,34 +605,32 @@ int main(int argc, char* argv[])
                     * glm::angleAxis(pitch, glm::vec3{ 1, 0, 0 });
 
                 instance.scale_ = glm::vec3{ 0.3f };
-                flashlights.push_back(flashlight);
-                flashlights.back().setInstances(InstanceBuffer{ instance });
+
+                objects.push_back(flashlight);
+                objects.back().setInstances(InstanceBuffer{ instance });
             }
         }
 
-        Model backpack{ resourceDir + "/model/backpack", "backpack.obj", general_shader };
-        backpack.setInstances(InstanceBuffer::InstanceData{ .traslation_ = { -5, 2, 0 } });
+        objects.emplace_back(resourceDir + "/model/backpack", "backpack.obj", general_shader);
+        objects.back().setInstances(InstanceBuffer::InstanceData{ .traslation_ = { -5, 2, 0 } });
 
-        Model visual_normal_backpack{ backpack };
-        visual_normal_backpack.setInstances(InstanceBuffer::InstanceData{ .traslation_ = { -5, 2, -5 } });
+        objects.push_back(objects.back());
+        objects.back().setInstances(InstanceBuffer::InstanceData{ .traslation_ = { -5, 2, -5 } });
 
-        Model explode_backpack{ backpack };
-        explode_backpack.setInstances(InstanceBuffer::InstanceData{ .traslation_ = { 0, 4, -5 } });
-        explode_backpack.program_ = ShaderProgram{
-            resourceDir + "shaders/explode_0.vert",
-            resourceDir + "shaders/explode_0.frag",
-            resourceDir + "shaders/explode_0.geom"
-        };
-        explode_backpack.program_.setUniformBlockBinding("LightData", 0);
-        explode_backpack.program_.setUniformBlockBinding("CamData", 1);
+        objects.push_back(objects.back());
+        objects.back().setShaderProgram(visual_normal_shader);
 
+        objects.push_back(objects.back());
+        objects.back().setShaderProgram(explode_shader);
+        objects.back().setInstances(InstanceBuffer::InstanceData{ .traslation_ = { 0, 4, -5 } });
+        
         glm::vec3 planet_pos{ 10, 30, 0 };
-        Model planet{ resourceDir + "/model/planet", "planet.obj", general_shader };
-        planet.setInstances(InstanceBuffer::InstanceData{ .traslation_ = planet_pos });
+        objects.emplace_back(resourceDir + "/model/planet", "planet.obj", general_shader);
+        objects.back().setInstances(InstanceBuffer::InstanceData{ .traslation_ = planet_pos });
 
-        Model asteroid { resourceDir + "/model/rock", "rock.obj", general_shader };
-        std::vector<InstanceBuffer::InstanceData> rocks;
         {
+            objects.emplace_back(resourceDir + "/model/rock", "rock.obj", general_shader);
+            std::vector<InstanceBuffer::InstanceData> rocks;
             glm::vec3 rock_offset{ 25, 0, 0 };
             glm::vec3 planet_axis = glm::normalize(glm::vec3{ 0, 1, 0.5 });
             std::vector<glm::mat4> rock_transforms;
@@ -649,27 +651,20 @@ int main(int argc, char* argv[])
                 instance.scale_ = glm::vec3{ 0.1 };
                 rocks.push_back(instance);
             }
+            objects.back().setInstances(std::move(rocks));
         }
-        asteroid.setInstances(rocks);
 
         win_data->last_time = steady_clock::now();
         for (unsigned frame = 0; !glfwWindowShouldClose(window.get()); ++frame) {
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            for (auto &cube : cubes) {
-                render(cube);
-            }
-            render(platform);
-            for (auto &m : flashlights) {
+            explode_shader.setFloat("explode_magnitude", std::abs(sin(glfwGetTime())));
+            for (auto &m : objects) {
                 render(m);
             }
-            render(backpack);
-            render(visual_normal_backpack);
-            render(visual_normal_backpack, 1, &visual_normal_shader);
-            explode_backpack.program_.setFloat("explode_magnitude", std::abs(sin(glfwGetTime())));
-            render(explode_backpack);
-            render(planet);
-            render(asteroid, rocks.size());
+            for (auto &m : outline_objects) {
+                render(m);
+            }
             auto now = steady_clock::now();
             win_data->delta_time = now - win_data->last_time;
             win_data->last_time = now;
