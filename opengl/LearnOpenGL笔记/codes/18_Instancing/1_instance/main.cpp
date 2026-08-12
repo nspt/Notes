@@ -290,25 +290,6 @@ auto initContextAndWindow()
     };
 }
 
-Mesh createGrassMesh(InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::InstanceData{} })
-{
-    const float x = 0.5f, y = 0.5f, z = 0.5f;
-    static std::vector<Vertex> vertices = {
-        { { -x, -y, z }, { 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }},
-        { { x, -y, z }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }},
-        { { x, y, z }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }},
-        { { -x, y, z }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }},
-    };
-    static std::vector<std::uint32_t> indices = {
-        0, 1, 2,
-        0, 2, 3,
-    };
-    static VertexBuffer vbo{ vertices };
-    static IndexBuffer ebo{ indices };
-
-    return Mesh{ vbo, ebo, ibo };
-}
-
 Mesh createQuadMesh(InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::InstanceData{} })
 {
     static std::vector<Vertex> vertices = {
@@ -320,6 +301,8 @@ Mesh createQuadMesh(InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::Instanc
     static std::vector<std::uint32_t> indices = {
         0, 1, 2,
         0, 2, 3,
+        0, 2, 1,
+        0, 3, 2
     };
     static VertexBuffer vbo{ vertices };
     static IndexBuffer ebo{ indices };
@@ -416,14 +399,14 @@ std::vector<RenderObject> createGlasses(const std::string &resourceDir, ShaderPr
     material.diffuse_textures_.push_back(Texture2D(resourceDir + "/textures/window.png"));
     material.diffuse_textures_[0].setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     std::vector<InstanceBuffer::InstanceData> instances {
-        { .traslation_ = { 7.0f,  1.0f,  -4.0f } },
-        { .traslation_ = { 0.0f,  1.0f,  -4.0f } },
-        { .traslation_ = { -7.0f, 1.0f, -3.0f } },
-        { .traslation_ = { -7.0f, 1.0f, 0.0f } },
-        { .traslation_ = { 7.0f,  1.0f,  0.0f } },
-        { .traslation_ = { -7.0f, 1.0f, 3.0f } },
-        { .traslation_ = { 0.0f,  1.0f, 3.0f } },
-        { .traslation_ = { 7.0f,  1.0f,  4.0f } },
+        { .traslation_ = { 7.0f,  1.0f,  -5.0f } },
+        { .traslation_ = { 0.0f,  1.0f,  -5.0f } },
+        { .traslation_ = { -7.0f, 1.0f, -4.0f } },
+        { .traslation_ = { -7.0f, 1.0f, 1.0f } },
+        { .traslation_ = { 7.0f,  1.0f,  1.0f } },
+        { .traslation_ = { -7.0f, 1.0f, 4.0f } },
+        { .traslation_ = { 0.0f,  1.0f, 4.0f } },
+        { .traslation_ = { 7.0f,  1.0f,  5.0f } },
     };
     std::vector<RenderObject> glasses;
     glasses.reserve(instances.size());
@@ -702,6 +685,7 @@ int main(int argc, char* argv[])
             skybox_shader.use();
             skybox.mesh_.draw();
             glDepthFunc(GL_LESS);
+            glEnable(GL_CULL_FACE);
 
             // draw transparent objects
             glEnable(GL_BLEND);
@@ -711,7 +695,6 @@ int main(int argc, char* argv[])
                 render(*obj.first);
             }
             glDisable(GL_BLEND);
-            glEnable(GL_CULL_FACE);
 
             auto now = steady_clock::now();
             win_data->delta_time = now - win_data->last_time;
