@@ -605,7 +605,7 @@ int main(int argc, char* argv[])
         float identity_kernel[9] {
             0, 0, 0,
             0, 1, 0,
-            0, 1, 0
+            0, 0, 0
         };
         float sharpen_kernel[9] {
             -1, -1, -1,

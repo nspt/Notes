@@ -23,6 +23,16 @@ public:
     {
         return data_->id_;
     }
+
+    void reallocate(GLenum format, int width, int height)
+    {
+        data_->format_ = format;
+        data_->width_ = width;
+        data_->height_ = height;
+        glBindRenderbuffer(GL_RENDERBUFFER, data_->id_);
+        glRenderbufferStorage(GL_RENDERBUFFER, data_->format_, data_->width_, data_->height_);
+    }
+
 private:
     struct Data {
         unsigned int id_ = 0;

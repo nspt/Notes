@@ -42,6 +42,25 @@ Texture2D::Texture2D(int width, int height, GLenum format)
     init(nullptr, width, height, format);
 }
 
+void Texture2D::generateMipmap() const
+{
+    bind(0);
+    glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+void Texture2D::reallocate(int width, int height, GLenum format, void *data)
+{
+    data_->width_ = width;
+    data_->height_ = height;
+    data_->format_ = format;
+
+    bind(0);
+    glTexImage2D(GL_TEXTURE_2D, 0,
+        data_->format_, data_->width_, data_->height_, 0,
+        data_->format_, GL_UNSIGNED_BYTE, data
+    );
+}
+
 void Texture2D::init(void *data, int width, int height, GLenum format) noexcept
 {
     data_->width_ = width;
@@ -55,7 +74,6 @@ void Texture2D::init(void *data, int width, int height, GLenum format) noexcept
         data_->format_, data_->width_, data_->height_, 0,
         data_->format_, GL_UNSIGNED_BYTE, data
     );
-    glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }

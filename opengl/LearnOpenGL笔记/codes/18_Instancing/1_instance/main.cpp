@@ -30,8 +30,8 @@
 #include <random>
 #include "glm/gtc/quaternion.hpp"
 
-static constexpr int def_win_width = 800;
-static constexpr int def_win_height = 600;
+static constexpr int def_win_width = 1920;
+static constexpr int def_win_height = 1080;
 
 struct WinData
 {
@@ -509,9 +509,9 @@ void renderOutline(Model &m, const glm::vec3 &color, ShaderProgram *program = nu
     }
 }
 
-std::vector<std::pair<Model*, float>> sortObjectsByDistance(WinData &win_data, const std::vector<Model> &objs)
+std::vector<std::pair<Model*, float>> sortObjectsByDistance(Camera &camera, const std::vector<Model> &objs)
 {
-    auto cam_pos = win_data.camera.pos();
+    auto cam_pos = camera.pos();
     std::vector<std::pair<Model*, float>> sorted;
     sorted.reserve(objs.size());
     for (auto &obj : objs) {
@@ -579,25 +579,23 @@ int main(int argc, char* argv[])
         outline_objects.push_back(createCubes(resourceDir, general_shader));
         objects.push_back(createPlatform(resourceDir, general_shader));
 
-        {
-            Model flashlight{ resourceDir + "/model/flash_light", "Flashlight.obj", general_shader, false };
-            for (int i = 0; i < win_data->lights.counts.z; ++i) {
-                auto &spot{ win_data->lights.spot[i] };
-                InstanceBuffer::InstanceData instance;
-                instance.traslation_ = spot.pos_;
-                
-                glm::vec3 direction{ spot.direction_inner_ };
-                float yaw = atan2(direction.x, direction.z);
-                float horizontal = std::hypot(direction.x, direction.z);
-                float pitch = atan2(-direction.y, horizontal);
-                instance.rotation_ = glm::angleAxis(yaw, glm::vec3{ 0, 1, 0 })
-                    * glm::angleAxis(pitch, glm::vec3{ 1, 0, 0 });
+        Model flashlight{ resourceDir + "/model/flash_light", "Flashlight.obj", general_shader, false };
+        for (int i = 0; i < win_data->lights.counts.z; ++i) {
+            auto &spot{ win_data->lights.spot[i] };
+            InstanceBuffer::InstanceData instance;
+            instance.traslation_ = spot.pos_;
+            
+            glm::vec3 direction{ spot.direction_inner_ };
+            float yaw = atan2(direction.x, direction.z);
+            float horizontal = std::hypot(direction.x, direction.z);
+            float pitch = atan2(-direction.y, horizontal);
+            instance.rotation_ = glm::angleAxis(yaw, glm::vec3{ 0, 1, 0 })
+                * glm::angleAxis(pitch, glm::vec3{ 1, 0, 0 });
 
-                instance.scale_ = glm::vec3{ 0.3f };
+            instance.scale_ = glm::vec3{ 0.3f };
 
-                objects.push_back(flashlight);
-                objects.back().setInstances(InstanceBuffer{ instance });
-            }
+            objects.push_back(flashlight);
+            objects.back().setInstances(InstanceBuffer{ instance });
         }
 
         objects.emplace_back(resourceDir + "/model/backpack", "backpack.obj", general_shader);
@@ -617,37 +615,33 @@ int main(int argc, char* argv[])
         objects.emplace_back(resourceDir + "/model/planet", "planet.obj", general_shader);
         objects.back().setInstances(InstanceBuffer::InstanceData{ .traslation_ = planet_pos });
 
-        {
-            objects.emplace_back(resourceDir + "/model/rock", "rock.obj", general_shader);
-            std::vector<InstanceBuffer::InstanceData> rocks;
-            glm::vec3 rock_offset{ 25, 0, 0 };
-            glm::vec3 planet_axis = glm::normalize(glm::vec3{ 0, 1, 0.5 });
-            std::vector<glm::mat4> rock_transforms;
-            std::mt19937 rand_gen{ std::random_device{}() };
-            std::normal_distribution<float> normal_dist{ 0, 1 };
-            for (int i = 0; i < 10000; ++i) {
-                glm::vec3 rand_offset{ normal_dist(rand_gen), normal_dist(rand_gen), normal_dist(rand_gen) };
-                float orbit_angle = 360.0f / 1000.0f * i;
+        objects.emplace_back(resourceDir + "/model/rock", "rock.obj", general_shader);
+        std::vector<InstanceBuffer::InstanceData> rocks;
+        glm::vec3 rock_offset{ 25, 0, 0 };
+        glm::vec3 planet_axis = glm::normalize(glm::vec3{ 0, 1, 0.5 });
+        std::vector<glm::mat4> rock_transforms;
+        std::mt19937 rand_gen{ std::random_device{}() };
+        std::normal_distribution<float> normal_dist{ 0, 1 };
+        for (int i = 0; i < 10000; ++i) {
+            glm::vec3 rand_offset{ normal_dist(rand_gen), normal_dist(rand_gen), normal_dist(rand_gen) };
+            float orbit_angle = 360.0f / 1000.0f * i;
 
-                glm::quat orbit_rotation = glm::angleAxis(glm::radians(orbit_angle),
-                    glm::normalize(planet_axis));
-                glm::quat local_rotation = glm::angleAxis(normal_dist(rand_gen),
-                    glm::normalize(rand_offset));
-                InstanceBuffer::InstanceData instance;
-                instance.traslation_ = planet_pos +
-                    orbit_rotation * (rock_offset + rand_offset);
-                instance.rotation_ = orbit_rotation * local_rotation;
-                instance.scale_ = glm::vec3{ 0.1 };
-                rocks.push_back(instance);
-            }
-            objects.back().setInstances(std::move(rocks));
+            glm::quat orbit_rotation = glm::angleAxis(glm::radians(orbit_angle),
+                glm::normalize(planet_axis));
+            glm::quat local_rotation = glm::angleAxis(normal_dist(rand_gen),
+                glm::normalize(rand_offset));
+            InstanceBuffer::InstanceData instance;
+            instance.traslation_ = planet_pos +
+                orbit_rotation * (rock_offset + rand_offset);
+            instance.rotation_ = orbit_rotation * local_rotation;
+            instance.scale_ = glm::vec3{ 0.1 };
+            rocks.push_back(instance);
         }
+        objects.back().setInstances(std::move(rocks));
 
         objects.push_back(createGrasses(resourceDir, general_shader));
 
-        RenderObject skybox{
-            Material{}, createCubeMesh()
-        };
+        RenderObject skybox{ Material{}, createCubeMesh() };
         std::vector<std::string> faces
         {
             resourceDir + "/textures/skybox/right.jpg",
@@ -665,8 +659,41 @@ int main(int argc, char* argv[])
             std::make_move_iterator(glasses.begin()),
             std::make_move_iterator(glasses.end()));
 
-        win_data->last_time = steady_clock::now();
-        for (unsigned frame = 0; !glfwWindowShouldClose(window.get()); ++frame) {
+        Texture2D mirror_texture{ win_data->win_width, win_data->win_height / 2, GL_RGB };
+        RenderBuffer mirror_rbo{ GL_DEPTH24_STENCIL8, win_data->win_width, win_data->win_height / 2 };
+        FrameBuffer mirror_fbo;
+        mirror_fbo.attachTexture(GL_COLOR_ATTACHMENT0, mirror_texture);
+        mirror_fbo.attachRBO(GL_DEPTH_STENCIL_ATTACHMENT, mirror_rbo);
+        if (!mirror_fbo.isCompleted()) {
+            std::cerr << "Mirror FBO is not completed" << std::endl;
+            abort();
+        }
+
+        RenderObject mirror;
+        mirror.material_.program_ = ShaderProgram {
+            resourceDir + "shaders/kernel_0.vert",
+            resourceDir + "shaders/kernel_0.frag"
+        };
+        float identity_kernel[9] {
+            0, 0, 0,
+            0, 1, 0,
+            0, 0, 0
+        };
+        float edge_kernel[9] {
+            1, 1, 1,
+            1, -8, 1,
+            1, 1, 1
+        };
+        mirror.material_.program_.setInt("tex", 0);
+        mirror.material_.program_.setFLoatArr("kernel", identity_kernel, 9);
+        mirror.mesh_ = createQuadMesh(
+            InstanceBuffer::InstanceData{
+                .traslation_ = glm::vec3{ 0, 0.85, 0 },
+                .scale_ = glm::vec3{ 0.3, 0.15, 1.0 }
+            }
+        );
+
+        auto render_scene = [&](Camera &cam){
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             explode_shader.setFloat("explode_magnitude", std::abs(sin(glfwGetTime())));
@@ -681,7 +708,7 @@ int main(int argc, char* argv[])
             glDisable(GL_CULL_FACE);
             glDepthFunc(GL_LEQUAL);
             skybox.material_.diffuse_textures_[0].bind(0);
-            skybox_shader.setMat4("no_translate_view", glm::mat4(glm::mat3(win_data->camera.viewMatrix())));
+            skybox_shader.setMat4("no_translate_view", glm::mat4(glm::mat3(cam.viewMatrix())));
             skybox_shader.use();
             skybox.mesh_.draw();
             glDepthFunc(GL_LESS);
@@ -690,11 +717,46 @@ int main(int argc, char* argv[])
             // draw transparent objects
             glEnable(GL_BLEND);
             glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
-            auto sorted = sortObjectsByDistance(*win_data, transparent_objects);
+            auto sorted = sortObjectsByDistance(cam, transparent_objects);
             for (auto &obj : sorted) {
                 render(*obj.first);
             }
             glDisable(GL_BLEND);
+        };
+
+        win_data->last_time = steady_clock::now();
+        for (unsigned frame = 0; !glfwWindowShouldClose(window.get()); ++frame) {
+            if (mirror_texture.width() != win_data->win_width
+                || mirror_texture.height() != win_data->win_height / 2) {
+                mirror_texture.reallocate(win_data->win_width, win_data->win_height / 2, GL_RGB);
+                mirror_rbo.reallocate(GL_DEPTH24_STENCIL8, win_data->win_width, win_data->win_height / 2);
+            }
+
+            Camera mirror_camera{ win_data->camera };
+            mirror_camera.yaw(-180);
+            mirror_camera.pitch(-2 * mirror_camera.pitch());
+            CameraData mirror_cam_data{ win_data->cam_data };
+            mirror_cam_data.view = mirror_camera.viewMatrix();
+            mirror_cam_data.projection = glm::perspective(
+                glm::radians(win_data->fov),
+                static_cast<float>(mirror_texture.width())
+                    / static_cast<float>(mirror_texture.height()),
+                0.1f,
+                100000.0f
+            );
+            mirror_fbo.bind();
+            glViewport(0, 0, mirror_texture.width(), mirror_texture.height());
+            win_data->cam_data_UBO.setSubData(0, sizeof(CameraData), &mirror_cam_data);
+            render_scene(mirror_camera);
+            mirror_fbo.unbind();
+            glViewport(0, 0, win_data->win_width, win_data->win_height);
+            win_data->cam_data_UBO.setSubData(0, sizeof(CameraData), &win_data->cam_data);
+            render_scene(win_data->camera);
+
+            glDisable(GL_DEPTH_TEST);
+            mirror_texture.bind(0);
+            render(mirror);
+            glEnable(GL_DEPTH_TEST);
 
             auto now = steady_clock::now();
             win_data->delta_time = now - win_data->last_time;
