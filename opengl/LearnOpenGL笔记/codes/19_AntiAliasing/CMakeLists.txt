@@ -1,0 +1,2 @@
+add_subdirectory(0_multisample)
+add_subdirectory(1_sampler2DMS)
