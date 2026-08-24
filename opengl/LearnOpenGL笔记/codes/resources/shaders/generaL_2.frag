@@ -66,13 +66,16 @@ layout (std140) uniform LightData {
 
 struct ShadowMap {
     ivec4 counts; // x: directional, y: point, z: spot — 有 shadow map 的光源数量
+    float directional_bias[2];
+    float spot_bias[4];
+    float point_bias[8];
     sampler2D directional[2];
     sampler2D spot[4];
     sampler2D point_light[8];
 };
 uniform ShadowMap shadowMap;
 
-float shadowCalculation(mat4 light_space_transform, sampler2D depth_map)
+float shadowCalculation(mat4 light_space_transform, sampler2D depth_map, float bias)
 {
     vec4 light_space_frag_pos = light_space_transform * vec4(fs_in.v_world_pos, 1.0);
     vec3 coords = light_space_frag_pos.xyz / light_space_frag_pos.w;
@@ -88,7 +91,6 @@ float shadowCalculation(mat4 light_space_transform, sampler2D depth_map)
         return 0.0;
 
     float cur_depth = coords.z;
-    float bias = 0.001;
     vec2 texel_size = 1.0 / vec2(textureSize(depth_map, 0));
     float shadow = 0.0;
     for (int x = -1; x <= 1; ++x) {
@@ -105,7 +107,10 @@ vec3 calcDirectionalLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, i
     vec3 result = vec3(0.0);
     for (int i = 0; i < lightData.counts.x; ++i) {
         float shadow = (i < shadowMap.counts.x)
-            ? shadowCalculation(lightData.directional[i].light_space_transform, shadowMap.directional[i])
+            ? shadowCalculation(
+                lightData.directional[i].light_space_transform,
+                shadowMap.directional[i],
+                shadowMap.directional_bias[i])
             : 1.0;
         vec3 light_dir = lightData.directional[i].direction.xyz;
         float diff = max(dot(normal, -light_dir), 0.0);
@@ -133,7 +138,10 @@ vec3 calcPointLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3
                             lightData.point_light[i].attenuation.y * distance + 
                             lightData.point_light[i].attenuation.z * (distance * distance));
         float shadow = (i < shadowMap.counts.y)
-            ? shadowCalculation(lightData.point_light[i].light_space_transform, shadowMap.point_light[i])
+            ? shadowCalculation(
+                lightData.point_light[i].light_space_transform,
+                shadowMap.point_light[i],
+                shadowMap.point_bias[i])
             : 1.0;
         vec3 contrib = lightData.point_light[i].ambient.xyz * ambient
                      + lightData.point_light[i].diffuse.xyz * diff * diffuse * shadow
@@ -166,7 +174,10 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
             ? clamp((theta - outer_cutoff) / epsilon, 0.0, 1.0)
             : (theta > outer_cutoff ? 1.0 : 0.0);
         float shadow = (i < shadowMap.counts.z)
-            ? shadowCalculation(lightData.spot[i].light_space_transform, shadowMap.spot[i])
+            ? shadowCalculation(
+                lightData.spot[i].light_space_transform,
+                shadowMap.spot[i],
+                shadowMap.spot_bias[i])
             : 1.0;
         vec3 contrib = lightData.spot[i].ambient.xyz * ambient
                      + lightData.spot[i].diffuse.xyz * diff * diffuse * shadow

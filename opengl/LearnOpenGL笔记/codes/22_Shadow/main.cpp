@@ -30,10 +30,17 @@
 #include <random>
 #include "glm/gtc/quaternion.hpp"
 #include <array>
+#include <filesystem>
 #include <format>
+#include <unordered_map>
 
 static constexpr int def_win_width = 1920;
 static constexpr int def_win_height = 1080;
+
+static std::vector<Model> objects;
+static std::vector<Model> outline_objects;
+static std::vector<Model> transparent_objects;
+static std::unordered_map<std::string, ShaderProgram> shaders;
 
 struct WinData
 {
@@ -201,72 +208,6 @@ GLFWwindow* createWindow()
     return window;
 }
 
-void initLightData(WinData &win_data)
-{
-    LightData &data{ win_data.lights };
-
-    // 1. directional
-    data.counts.x = 1;
-    data.directional[0].direction_ = glm::normalize(glm::vec4{ -1, -1, -1, 0 });
-    data.directional[0].ambient_ = glm::vec4{ 0.05 };
-    data.directional[0].diffuse_ = glm::vec4{ 0.3 };
-    data.directional[0].specular_ = glm::vec4{ 0.5 };
-    data.directional[0].light_space_transform_ = calcDirectionalLightSpaceTransform(
-        glm::vec3(data.directional[0].direction_), 5.5f, 1.0f, 500.0f
-    );
-
-    // 2. point
-    data.counts.y = 0;
-    data.point[0].pos_ = glm::vec4{ 5, 0, 0, 1 };
-    data.point[0].ambient_ = glm::vec4{ 0.2 };
-    data.point[0].diffuse_ = glm::vec4{ 0.5 };
-    data.point[0].specular_ = glm::vec4{ 1.0 };
-    data.point[0].attenuation = glm::vec4{ 1.0, 0.027, 0.0028, 0.0 };
-    {
-        const glm::vec3 pos = glm::vec3(data.point[0].pos_);
-        const glm::vec3 dir = glm::normalize(glm::vec3{ 0.0f } - pos);
-        data.point[0].light_space_transform_ = calcSpotLightSpaceTransform(
-            pos, dir, glm::cos(glm::radians(45.0f)), 0.1f, 50.0f
-        );
-    }
-
-    // 3. spot
-    data.counts.z = 1;
-    data.spot[0].pos_ = glm::vec4{ 0, 10, 10, 1 };
-    {
-        auto dir = glm::normalize(glm::vec3{ 0 } - glm::vec3(data.spot[0].pos_));
-        // inner/outer：余弦值，略放宽锥角，避免只有中心一点亮
-        data.spot[0].direction_inner_ = glm::vec4{ dir, glm::cos(glm::radians(22.5f)) };
-    }
-    data.spot[0].ambient_ = glm::vec4{ 0.1 };
-    data.spot[0].diffuse_ = glm::vec4{ 1.0 };
-    data.spot[0].specular_ = glm::vec4{ 1.0 };
-    // 距离约 14（灯到原点），过强的 quadratic 会把光压得很暗
-    data.spot[0].attenuation_outter_ = glm::vec4{ 1.0, 0.0009, 0.00032, glm::cos(glm::radians(37.5f)) };
-    data.spot[0].light_space_transform_ = calcSpotLightSpaceTransform(
-        glm::vec3(data.spot[0].pos_),
-        glm::vec3(data.spot[0].direction_inner_),
-        data.spot[0].attenuation_outter_.w,
-        0.1f, 100.0f
-    );
-
-    data.spot[1].pos_ = glm::vec4{ 10, 10, 0, 1 };
-    {
-        auto dir = glm::normalize(glm::vec3{ 0 } - glm::vec3(data.spot[1].pos_));
-        data.spot[1].direction_inner_ = glm::vec4{ dir, glm::cos(glm::radians(12.5f)) };
-    }
-    data.spot[1].ambient_ = glm::vec4{ 0.1 };
-    data.spot[1].diffuse_ = glm::vec4{ 1.0 };
-    data.spot[1].specular_ = glm::vec4{ 1.0 };
-    data.spot[1].attenuation_outter_ = glm::vec4{ 1.0, 0.09, 0.032, glm::cos(glm::radians(17.5f)) };
-    data.spot[1].light_space_transform_ = calcSpotLightSpaceTransform(
-        glm::vec3(data.spot[1].pos_),
-        glm::vec3(data.spot[1].direction_inner_),
-        data.spot[1].attenuation_outter_.w,
-        0.1f, 50.0f
-    );
-}
-
 void initWinData(WinData &win_data)
 {
     win_data.fov = 45.0f;
@@ -280,7 +221,7 @@ void initWinData(WinData &win_data)
         0.1f,
         100000.0f
     );
-    initLightData(win_data);
+    initLightData(win_data.lights);
     
     win_data.lights_UBO.bindBase(0);
     win_data.lights_UBO.setSubData(0, sizeof(LightData), &win_data.lights);
@@ -398,8 +339,7 @@ Mesh createCubeMesh(InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::Instanc
     return Mesh{ vbo, ebo, ibo };
 }
 
-RenderObject createGrasses(const std::string &resourceDir,
-                           ShaderProgram render_shader, ShaderProgram shadow_shader)
+RenderObject createGrasses(const std::string &resourceDir)
 {
     Material material;
     material.diffuse_textures_.push_back(Texture2D(resourceDir + "/textures/grass.png"));
@@ -416,12 +356,11 @@ RenderObject createGrasses(const std::string &resourceDir,
     };
     return RenderObject{
         material, createQuadMesh(InstanceBuffer{ std::move(grasses) }),
-        render_shader, shadow_shader
+        shaders.at("general"), shaders.at("shadow")
     };
 }
 
-std::vector<RenderObject> createGlasses(const std::string &resourceDir,
-                                        ShaderProgram render_shader)
+std::vector<RenderObject> createGlasses(const std::string &resourceDir)
 {
     Material material;
     material.diffuse_textures_.push_back(Texture2D(resourceDir + "/textures/window.png"));
@@ -440,15 +379,14 @@ std::vector<RenderObject> createGlasses(const std::string &resourceDir,
     glasses.reserve(instances.size());
     for (auto &instance : instances) {
         glasses.push_back(RenderObject{
-            material, createQuadMesh(instance), render_shader, ShaderProgram{}
+            material, createQuadMesh(instance), shaders.at("general"), ShaderProgram{}
         });
         glasses.back().render_state_.blend_ = true;
     }
     return glasses;
 }
 
-RenderObject createPlatform(const std::string &resourceDir,
-                            ShaderProgram render_shader, ShaderProgram shadow_shader)
+RenderObject createPlatform(const std::string &resourceDir)
 {
     Material material;
     material.diffuse_textures_.push_back(Texture2D(resourceDir + "/textures/container2.png"));
@@ -459,11 +397,12 @@ RenderObject createPlatform(const std::string &resourceDir,
     platform.translation_ = glm::vec3{ 0.0f, -50.0f, 0.0f };
     platform.scale_ = glm::vec3{ 100.0f };
 
-    return RenderObject{ material, createCubeMesh(platform), render_shader, shadow_shader };
+    return RenderObject{
+        material, createCubeMesh(platform), shaders.at("general"), shaders.at("shadow")
+    };
 }
 
-std::vector<RenderObject> createCubes(const std::string &resourceDir,
-                                      ShaderProgram render_shader, ShaderProgram shadow_shader)
+std::vector<RenderObject> createCubes(const std::string &resourceDir)
 {
     Material material;
     material.diffuse_textures_.push_back(Texture2D(resourceDir + "/textures/container2.png"));
@@ -476,11 +415,11 @@ std::vector<RenderObject> createCubes(const std::string &resourceDir,
         { .translation_ = { 10.0f,  1.7f,  0.0f } }
     };
 
-    std::vector<RenderObject> objects;
+    std::vector<RenderObject> result;
     for (auto &cube : cubes) {
-        objects.emplace_back(material, createCubeMesh(cube), render_shader, shadow_shader);
+        result.emplace_back(material, createCubeMesh(cube), shaders.at("general"), shaders.at("shadow"));
     }
-    return objects;
+    return result;
 }
 
 static void setupStencilMaskWriter(RenderObject &obj, GLint ref = 1)
@@ -519,18 +458,17 @@ static RenderObject createOutlineShell(const RenderObject &src, const glm::vec3 
     return outline;
 }
 
-std::vector<RenderObject> createOutlineCubes(const std::string &resourceDir,
-                                            ShaderProgram render_shader,
-                                            ShaderProgram shadow_shader,
-                                            const glm::vec3 &outline_color = glm::vec3{ 0.0f, 1.0f, 0.0f })
+std::vector<RenderObject> createOutlineCubes(
+    const std::string &resourceDir,
+    [[maybe_unused]] const glm::vec3 &outline_color = glm::vec3{ 0.0f, 1.0f, 0.0f })
 {
-    auto cubes = createCubes(resourceDir, render_shader, shadow_shader);
+    auto cubes = createCubes(resourceDir);
     std::vector<RenderObject> result;
     result.reserve(cubes.size() * 2);
     for (auto &cube : cubes) {
         setupStencilMaskWriter(cube);
         result.push_back(cube);
-        result.push_back(createOutlineShell(cube, outline_color));
+        //result.push_back(createOutlineShell(cube, outline_color));
     }
     return result;
 }
@@ -552,64 +490,128 @@ std::vector<std::pair<Model*, float>> sortObjectsByDistance(Camera &camera, cons
     return sorted;
 }
 
-Texture2D createShadowMapTexture(int size)
+void createShaders(const std::string &resourceDir)
 {
-    Texture2D tex{ size, size, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, nullptr };
-    tex.bind(0);
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, size, size, 0,
-        GL_DEPTH_COMPONENT, GL_FLOAT, nullptr
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    const float border_color[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
-    return tex;
+    auto add = [&](const std::string &name,
+                   const std::filesystem::path &vert,
+                   const std::filesystem::path &frag,
+                   const std::filesystem::path &geom = {}) {
+        shaders.emplace(name, ShaderProgram{ vert, frag, geom });
+    };
+
+    add("general",
+        resourceDir + "shaders/generaL_2.vert",
+        resourceDir + "shaders/generaL_2.frag");
+    shaders.at("general").setUniformBlockBinding("LightData", 0);
+    shaders.at("general").setUniformBlockBinding("CamData", 1);
+
+    add("shadow",
+        resourceDir + "shaders/shadow_0.vert",
+        resourceDir + "shaders/shadow_0.frag");
+
+    add("visual_normal",
+        resourceDir + "shaders/visual_normal_0.vert",
+        resourceDir + "shaders/visual_normal_0.frag",
+        resourceDir + "shaders/visual_normal_0.geom");
+    shaders.at("visual_normal").setUniformBlockBinding("CamData", 1);
+    shaders.at("visual_normal").setVec3("normal_color", glm::vec3{ 0, 1, 0 });
+
+    add("explode",
+        resourceDir + "shaders/explode_0.vert",
+        resourceDir + "shaders/explode_0.frag",
+        resourceDir + "shaders/explode_0.geom");
+    shaders.at("explode").setUniformBlockBinding("LightData", 0);
+    shaders.at("explode").setUniformBlockBinding("CamData", 1);
+
+    add("explode_shadow",
+        resourceDir + "shaders/shadow_explode_0.vert",
+        resourceDir + "shaders/shadow_explode_0.frag",
+        resourceDir + "shaders/shadow_explode_0.geom");
+
+    add("skybox",
+        resourceDir + "shaders/skybox_0.vert",
+        resourceDir + "shaders/skybox_0.frag");
+    shaders.at("skybox").setUniformBlockBinding("CamData", 1);
+    shaders.at("skybox").setInt("skybox", 0);
+
+    add("kernel",
+        resourceDir + "shaders/kernel_1.vert",
+        resourceDir + "shaders/kernel_1.frag");
 }
 
-FrameBuffer createShadowMapFBO(const Texture2D &depth_texture)
+void createScene(const std::string &resourceDir, const LightData &lights)
 {
-    FrameBuffer fbo;
-    fbo.attachTexture(GL_DEPTH_ATTACHMENT, depth_texture);
-    if (!fbo.isCompleted()) {
-        throw std::runtime_error{ "Shadow FBO is not completed" };
-    }
-    return fbo;
-}
+    auto &general = shaders.at("general");
+    auto &shadow = shaders.at("shadow");
 
-void bindShadowMapSamplers(
-    ShaderProgram &shader,
-    const glm::ivec4 &shadow_counts,
-    const std::array<Texture2D, 2> &directional_maps,
-    const std::array<Texture2D, 4> &spot_maps,
-    unsigned first_unit)
-{
-    shader.setIVec4("shadowMap.counts", shadow_counts);
+    outline_objects.push_back(createOutlineCubes(resourceDir));
+    objects.push_back(createPlatform(resourceDir));
 
-    // sampler 只要在 shader 里仍是 active，就必须绑到完整纹理；
-    // counts 跳过采样后仍可能被驱动视为 active，未使用的槽用已有 shadow map 占位即可
-    const Texture2D &fallback = directional_maps[0];
+    Model flashlight{ resourceDir + "/model/flash_light", "Flashlight.obj",
+                      general, shadow, false };
+    for (int i = 0; i < lights.counts.z; ++i) {
+        auto &spot{ lights.spot[i] };
+        InstanceBuffer::InstanceData instance;
+        instance.translation_ = spot.pos_;
 
-    unsigned unit = first_unit;
-    for (int i = 0; i < 2; ++i) {
-        const Texture2D &map = i < shadow_counts.x ? directional_maps[i] : fallback;
-        map.bind(unit);
-        shader.setInt(std::format("shadowMap.directional[{}]", i), static_cast<int>(unit));
-        ++unit;
+        glm::vec3 direction{ spot.direction_inner_ };
+        float yaw = atan2(direction.x, direction.z);
+        float horizontal = std::hypot(direction.x, direction.z);
+        float pitch = atan2(-direction.y, horizontal);
+        instance.rotation_ = glm::angleAxis(yaw, glm::vec3{ 0, 1, 0 })
+            * glm::angleAxis(pitch, glm::vec3{ 1, 0, 0 });
+        instance.scale_ = glm::vec3{ 0.3f };
+
+        objects.push_back(flashlight);
+        objects.back().setInstances(InstanceBuffer{ instance });
+        // 灯具在光源位置，若参与 shadow pass 会挡住整锥，导致场景全黑
+        objects.back().setShadowShader(ShaderProgram{});
     }
-    for (int i = 0; i < 4; ++i) {
-        const Texture2D &map = i < shadow_counts.z ? spot_maps[i] : fallback;
-        map.bind(unit);
-        shader.setInt(std::format("shadowMap.spot[{}]", i), static_cast<int>(unit));
-        ++unit;
+
+    Model backpack{ resourceDir + "/model/backpack", "backpack.obj", general, shadow };
+    backpack.setInstances(InstanceBuffer::InstanceData{ .translation_ = { -5, 2, 0 } });
+    objects.push_back(backpack);
+
+    backpack.setInstances(InstanceBuffer::InstanceData{ .translation_ = { -5, 2, -5 } });
+    objects.push_back(backpack);
+
+    backpack.setRenderShader(shaders.at("visual_normal"));
+    objects.push_back(backpack);
+
+    backpack.setRenderShader(shaders.at("explode"));
+    backpack.setShadowShader(shaders.at("explode_shadow"));
+    backpack.setInstances(InstanceBuffer::InstanceData{ .translation_ = { 0, 4, -5 } });
+    objects.push_back(backpack);
+
+    const glm::vec3 planet_pos{ 10, 30, 0 };
+    objects.emplace_back(resourceDir + "/model/planet", "planet.obj", general, shadow);
+    objects.back().setInstances(InstanceBuffer::InstanceData{ .translation_ = planet_pos });
+
+    objects.emplace_back(resourceDir + "/model/rock", "rock.obj", general, shadow);
+    std::vector<InstanceBuffer::InstanceData> rocks;
+    const glm::vec3 rock_offset{ 25, 0, 0 };
+    const glm::vec3 planet_axis = glm::normalize(glm::vec3{ 0, 1, 0.5 });
+    std::mt19937 rand_gen{ std::random_device{}() };
+    std::normal_distribution<float> normal_dist{ 0, 1 };
+    for (int i = 0; i < 10000; ++i) {
+        glm::vec3 rand_offset{ normal_dist(rand_gen), normal_dist(rand_gen), normal_dist(rand_gen) };
+        float orbit_angle = 360.0f / 1000.0f * i;
+
+        glm::quat orbit_rotation = glm::angleAxis(glm::radians(orbit_angle), planet_axis);
+        glm::quat local_rotation = glm::angleAxis(normal_dist(rand_gen), glm::normalize(rand_offset));
+        InstanceBuffer::InstanceData instance;
+        instance.translation_ = planet_pos + orbit_rotation * (rock_offset + rand_offset);
+        instance.rotation_ = orbit_rotation * local_rotation;
+        instance.scale_ = glm::vec3{ 0.1 };
+        rocks.push_back(instance);
     }
-    for (int i = 0; i < 8; ++i) {
-        fallback.bind(unit);
-        shader.setInt(std::format("shadowMap.point_light[{}]", i), static_cast<int>(unit));
-        ++unit;
-    }
+    objects.back().setInstances(std::move(rocks));
+
+    objects.push_back(createGrasses(resourceDir));
+
+    // auto glasses = createGlasses(resourceDir);
+    // for (auto &g : glasses)
+    //     transparent_objects.push_back(std::move(g));
 }
 
 int main(int argc, char* argv[])
@@ -627,22 +629,8 @@ int main(int argc, char* argv[])
         auto window = initContextAndWindow();
         WinData *win_data = static_cast<WinData*>(glfwGetWindowUserPointer(window.get()));
 
-
-        std::vector<Model> objects;
-        std::vector<Model> outline_objects;
-        std::vector<Model> transparent_objects;
-
-        ShaderProgram general_shader{
-            resourceDir + "shaders/generaL_2.vert",
-            resourceDir + "shaders/generaL_2.frag"
-        };
-        general_shader.setUniformBlockBinding("LightData", 0);
-        general_shader.setUniformBlockBinding("CamData", 1);
-
-        ShaderProgram shadow_shader{
-            resourceDir + "shaders/shadow_0.vert",
-            resourceDir + "shaders/shadow_0.frag"
-        };
+        createShaders(resourceDir);
+        createScene(resourceDir, win_data->lights);
 
         constexpr int shadow_map_size = 2048;
         std::array<Texture2D, 2> directional_shadow_maps{
@@ -666,108 +654,8 @@ int main(int argc, char* argv[])
             createShadowMapFBO(spot_shadow_maps[3])
         };
 
-        ShaderProgram visual_normal_shader{
-            resourceDir + "shaders/visual_normal_0.vert",
-            resourceDir + "shaders/visual_normal_0.frag",
-            resourceDir + "shaders/visual_normal_0.geom"
-        };
-        visual_normal_shader.setUniformBlockBinding("CamData", 1);
-        visual_normal_shader.setVec3("normal_color", glm::vec3{ 0, 1, 0 });
-
-        ShaderProgram explode_shader {
-            resourceDir + "shaders/explode_0.vert",
-            resourceDir + "shaders/explode_0.frag",
-            resourceDir + "shaders/explode_0.geom"
-        };
-        explode_shader.setUniformBlockBinding("LightData", 0);
-        explode_shader.setUniformBlockBinding("CamData", 1);
-
-        ShaderProgram explode_shadow_shader{
-            resourceDir + "shaders/shadow_explode_0.vert",
-            resourceDir + "shaders/shadow_explode_0.frag",
-            resourceDir + "shaders/shadow_explode_0.geom"
-        };
-        
-        ShaderProgram skybox_shader{
-            resourceDir + "shaders/skybox_0.vert",
-            resourceDir + "shaders/skybox_0.frag"
-        };
-        skybox_shader.setUniformBlockBinding("CamData", 1);
-        skybox_shader.setInt("skybox", 0);
-
-        outline_objects.push_back(createOutlineCubes(resourceDir, general_shader, shadow_shader));
-        objects.push_back(createPlatform(resourceDir, general_shader, shadow_shader));
-
-        Model flashlight{ resourceDir + "/model/flash_light", "Flashlight.obj",
-                          general_shader, shadow_shader, false };
-        for (int i = 0; i < win_data->lights.counts.z; ++i) {
-            auto &spot{ win_data->lights.spot[i] };
-            InstanceBuffer::InstanceData instance;
-            instance.translation_ = spot.pos_;
-            
-            glm::vec3 direction{ spot.direction_inner_ };
-            float yaw = atan2(direction.x, direction.z);
-            float horizontal = std::hypot(direction.x, direction.z);
-            float pitch = atan2(-direction.y, horizontal);
-            instance.rotation_ = glm::angleAxis(yaw, glm::vec3{ 0, 1, 0 })
-                * glm::angleAxis(pitch, glm::vec3{ 1, 0, 0 });
-
-            instance.scale_ = glm::vec3{ 0.3f };
-
-            objects.push_back(flashlight);
-            objects.back().setInstances(InstanceBuffer{ instance });
-            // 灯具在光源位置，若参与 shadow pass 会挡住整锥，导致场景全黑
-            objects.back().setShadowShader(ShaderProgram{});
-        }
-
-        objects.emplace_back(resourceDir + "/model/backpack", "backpack.obj",
-                             general_shader, shadow_shader);
-        objects.back().setInstances(InstanceBuffer::InstanceData{ .translation_ = { -5, 2, 0 } });
-
-        objects.push_back(objects.back());
-        objects.back().setInstances(InstanceBuffer::InstanceData{ .translation_ = { -5, 2, -5 } });
-
-        objects.push_back(objects.back());
-        objects.back().setRenderShader(visual_normal_shader);
-
-        objects.push_back(objects.back());
-        objects.back().setRenderShader(explode_shader);
-        objects.back().setShadowShader(explode_shadow_shader);
-        objects.back().setInstances(InstanceBuffer::InstanceData{ .translation_ = { 0, 4, -5 } });
-        
-        glm::vec3 planet_pos{ 10, 30, 0 };
-        objects.emplace_back(resourceDir + "/model/planet", "planet.obj",
-                             general_shader, shadow_shader);
-        objects.back().setInstances(InstanceBuffer::InstanceData{ .translation_ = planet_pos });
-
-        objects.emplace_back(resourceDir + "/model/rock", "rock.obj", general_shader, shadow_shader);
-        std::vector<InstanceBuffer::InstanceData> rocks;
-        glm::vec3 rock_offset{ 25, 0, 0 };
-        glm::vec3 planet_axis = glm::normalize(glm::vec3{ 0, 1, 0.5 });
-        std::vector<glm::mat4> rock_transforms;
-        std::mt19937 rand_gen{ std::random_device{}() };
-        std::normal_distribution<float> normal_dist{ 0, 1 };
-        for (int i = 0; i < 10000; ++i) {
-            glm::vec3 rand_offset{ normal_dist(rand_gen), normal_dist(rand_gen), normal_dist(rand_gen) };
-            float orbit_angle = 360.0f / 1000.0f * i;
-
-            glm::quat orbit_rotation = glm::angleAxis(glm::radians(orbit_angle),
-                glm::normalize(planet_axis));
-            glm::quat local_rotation = glm::angleAxis(normal_dist(rand_gen),
-                glm::normalize(rand_offset));
-            InstanceBuffer::InstanceData instance;
-            instance.translation_ = planet_pos +
-                orbit_rotation * (rock_offset + rand_offset);
-            instance.rotation_ = orbit_rotation * local_rotation;
-            instance.scale_ = glm::vec3{ 0.1 };
-            rocks.push_back(instance);
-        }
-        objects.back().setInstances(std::move(rocks));
-
-        objects.push_back(createGrasses(resourceDir, general_shader, shadow_shader));
-
         RenderObject skybox{ Material{}, createCubeMesh() };
-        skybox.render_shader_ = skybox_shader;
+        skybox.render_shader_ = shaders.at("skybox");
         skybox.render_state_.cull_face_ = false;
         skybox.render_state_.depth_func_ = GL_LEQUAL;
         std::vector<std::string> faces
@@ -781,11 +669,6 @@ int main(int argc, char* argv[])
         };
         TextureCubeMap cubemap_texture{ faces, false };
         skybox.material_.diffuse_textures_.push_back(cubemap_texture);
-
-        // auto glasses = createGlasses(resourceDir, general_shader);
-        // transparent_objects.insert(transparent_objects.end(),
-        //     std::make_move_iterator(glasses.begin()),
-        //     std::make_move_iterator(glasses.end()));
 
         constexpr GLsizei mirror_samples = 4;
         const int mirror_w = win_data->win_width;
@@ -801,10 +684,7 @@ int main(int argc, char* argv[])
         }
 
         RenderObject mirror;
-        mirror.render_shader_ = ShaderProgram {
-            resourceDir + "shaders/kernel_1.vert",
-            resourceDir + "shaders/kernel_1.frag"
-        };
+        mirror.render_shader_ = shaders.at("kernel");
         float identity_kernel[9] {
             0, 0, 0,
             0, 1, 0,
@@ -847,8 +727,8 @@ int main(int argc, char* argv[])
         auto update_shadow_maps = [&]() {
             LightData &lights = win_data->lights;
             const float explode_magnitude = std::abs(static_cast<float>(sin(glfwGetTime())));
-            explode_shader.setFloat("explode_magnitude", explode_magnitude);
-            explode_shadow_shader.setFloat("explode_magnitude", explode_magnitude);
+            shaders.at("explode").setFloat("explode_magnitude", explode_magnitude);
+            shaders.at("explode_shadow").setFloat("explode_magnitude", explode_magnitude);
 
             glm::ivec4 shadow_counts{ 0 };
             // shadow_counts.x = lights.counts.x;
@@ -875,8 +755,12 @@ int main(int argc, char* argv[])
             RenderObject::invalidateCachedState();
 
             bindShadowMapSamplers(
-                general_shader, shadow_counts,
-                directional_shadow_maps, spot_shadow_maps, 16
+                shaders.at("general"), shadow_counts,
+                directional_shadow_maps, spot_shadow_maps,
+                /* directional_bias */ std::array<float, 2>{ 0.000002f, 0.000002f },
+                /* spot_bias */        std::array<float, 4>{ 0.000002f, 0.000002f, 0.000002f, 0.000002f },
+                /* point_bias */       std::array<float, 8>{},
+                16
             );
         };
 
@@ -948,7 +832,11 @@ int main(int argc, char* argv[])
             glfwPollEvents();
             processInput(window.get());
         }
-        // 先释放窗口与 GL 资源，再 glfwTerminate
+        // 静态 Model/Shader 持有 GL 资源，须在销毁上下文前释放
+        objects.clear();
+        outline_objects.clear();
+        transparent_objects.clear();
+        shaders.clear();
         window.reset();
         glfwTerminate();
         return 0;
