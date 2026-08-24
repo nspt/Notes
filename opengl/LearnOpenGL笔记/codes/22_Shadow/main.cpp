@@ -208,11 +208,11 @@ void initLightData(WinData &win_data)
     // 1. directional
     data.counts.x = 1;
     data.directional[0].direction_ = glm::normalize(glm::vec4{ -1, -1, -1, 0 });
-    data.directional[0].ambient_ = glm::vec4{ 0.1 };
-    data.directional[0].diffuse_ = glm::vec4{ 0.6 };
-    data.directional[0].specular_ = glm::vec4{ 0.9 };
+    data.directional[0].ambient_ = glm::vec4{ 0.05 };
+    data.directional[0].diffuse_ = glm::vec4{ 0.3 };
+    data.directional[0].specular_ = glm::vec4{ 0.5 };
     data.directional[0].light_space_transform_ = calcDirectionalLightSpaceTransform(
-        glm::vec3(data.directional[0].direction_), 1.5f, 1.0f, 500.0f
+        glm::vec3(data.directional[0].direction_), 5.5f, 1.0f, 500.0f
     );
 
     // 2. point
@@ -231,32 +231,34 @@ void initLightData(WinData &win_data)
     }
 
     // 3. spot
-    data.counts.z = 0;
+    data.counts.z = 1;
     data.spot[0].pos_ = glm::vec4{ 0, 10, 10, 1 };
     {
         auto dir = glm::normalize(glm::vec3{ 0 } - glm::vec3(data.spot[0].pos_));
-        data.spot[0].direction_inner_ = glm::vec4{ dir, 0.99 };
+        // inner/outer：余弦值，略放宽锥角，避免只有中心一点亮
+        data.spot[0].direction_inner_ = glm::vec4{ dir, glm::cos(glm::radians(22.5f)) };
     }
-    data.spot[0].ambient_ = glm::vec4{ 0.2 };
-    data.spot[0].diffuse_ = glm::vec4{ 0.8 };
+    data.spot[0].ambient_ = glm::vec4{ 0.1 };
+    data.spot[0].diffuse_ = glm::vec4{ 1.0 };
     data.spot[0].specular_ = glm::vec4{ 1.0 };
-    data.spot[0].attenuation_outter_ = glm::vec4{ 1.0, 0.027, 0.0028, 0.95 };
+    // 距离约 14（灯到原点），过强的 quadratic 会把光压得很暗
+    data.spot[0].attenuation_outter_ = glm::vec4{ 1.0, 0.0009, 0.00032, glm::cos(glm::radians(37.5f)) };
     data.spot[0].light_space_transform_ = calcSpotLightSpaceTransform(
         glm::vec3(data.spot[0].pos_),
         glm::vec3(data.spot[0].direction_inner_),
         data.spot[0].attenuation_outter_.w,
-        0.1f, 50.0f
+        0.1f, 100.0f
     );
 
     data.spot[1].pos_ = glm::vec4{ 10, 10, 0, 1 };
     {
         auto dir = glm::normalize(glm::vec3{ 0 } - glm::vec3(data.spot[1].pos_));
-        data.spot[1].direction_inner_ = glm::vec4{ dir, 0.99 };
+        data.spot[1].direction_inner_ = glm::vec4{ dir, glm::cos(glm::radians(12.5f)) };
     }
-    data.spot[1].ambient_ = glm::vec4{ 0.2 };
-    data.spot[1].diffuse_ = glm::vec4{ 0.8 };
+    data.spot[1].ambient_ = glm::vec4{ 0.1 };
+    data.spot[1].diffuse_ = glm::vec4{ 1.0 };
     data.spot[1].specular_ = glm::vec4{ 1.0 };
-    data.spot[1].attenuation_outter_ = glm::vec4{ 1.0, 0.027, 0.0028, 0.95 };
+    data.spot[1].attenuation_outter_ = glm::vec4{ 1.0, 0.09, 0.032, glm::cos(glm::radians(17.5f)) };
     data.spot[1].light_space_transform_ = calcSpotLightSpaceTransform(
         glm::vec3(data.spot[1].pos_),
         glm::vec3(data.spot[1].direction_inner_),
@@ -579,27 +581,32 @@ FrameBuffer createShadowMapFBO(const Texture2D &depth_texture)
 
 void bindShadowMapSamplers(
     ShaderProgram &shader,
-    const LightData &lights,
+    const glm::ivec4 &shadow_counts,
     const std::array<Texture2D, 2> &directional_maps,
     const std::array<Texture2D, 4> &spot_maps,
-    const Texture2D &dummy_map,
     unsigned first_unit)
 {
+    shader.setIVec4("shadowMap.counts", shadow_counts);
+
+    // sampler 只要在 shader 里仍是 active，就必须绑到完整纹理；
+    // counts 跳过采样后仍可能被驱动视为 active，未使用的槽用已有 shadow map 占位即可
+    const Texture2D &fallback = directional_maps[0];
+
     unsigned unit = first_unit;
     for (int i = 0; i < 2; ++i) {
-        const Texture2D &map = i < lights.counts.x ? directional_maps[i] : dummy_map;
+        const Texture2D &map = i < shadow_counts.x ? directional_maps[i] : fallback;
         map.bind(unit);
         shader.setInt(std::format("shadowMap.directional[{}]", i), static_cast<int>(unit));
         ++unit;
     }
     for (int i = 0; i < 4; ++i) {
-        const Texture2D &map = i < lights.counts.z ? spot_maps[i] : dummy_map;
+        const Texture2D &map = i < shadow_counts.z ? spot_maps[i] : fallback;
         map.bind(unit);
         shader.setInt(std::format("shadowMap.spot[{}]", i), static_cast<int>(unit));
         ++unit;
     }
     for (int i = 0; i < 8; ++i) {
-        dummy_map.bind(unit);
+        fallback.bind(unit);
         shader.setInt(std::format("shadowMap.point_light[{}]", i), static_cast<int>(unit));
         ++unit;
     }
@@ -637,8 +644,7 @@ int main(int argc, char* argv[])
             resourceDir + "shaders/shadow_0.frag"
         };
 
-        constexpr int shadow_map_size = 4096;
-        Texture2D dummy_shadow_map = createShadowMapTexture(1);
+        constexpr int shadow_map_size = 2048;
         std::array<Texture2D, 2> directional_shadow_maps{
             createShadowMapTexture(shadow_map_size),
             createShadowMapTexture(shadow_map_size)
@@ -710,6 +716,8 @@ int main(int argc, char* argv[])
 
             objects.push_back(flashlight);
             objects.back().setInstances(InstanceBuffer{ instance });
+            // 灯具在光源位置，若参与 shadow pass 会挡住整锥，导致场景全黑
+            objects.back().setShadowShader(ShaderProgram{});
         }
 
         objects.emplace_back(resourceDir + "/model/backpack", "backpack.obj",
@@ -732,29 +740,29 @@ int main(int argc, char* argv[])
                              general_shader, shadow_shader);
         objects.back().setInstances(InstanceBuffer::InstanceData{ .translation_ = planet_pos });
 
-        // objects.emplace_back(resourceDir + "/model/rock", "rock.obj", general_shader, shadow_shader);
-        // std::vector<InstanceBuffer::InstanceData> rocks;
-        // glm::vec3 rock_offset{ 25, 0, 0 };
-        // glm::vec3 planet_axis = glm::normalize(glm::vec3{ 0, 1, 0.5 });
-        // std::vector<glm::mat4> rock_transforms;
-        // std::mt19937 rand_gen{ std::random_device{}() };
-        // std::normal_distribution<float> normal_dist{ 0, 1 };
-        // for (int i = 0; i < 10000; ++i) {
-        //     glm::vec3 rand_offset{ normal_dist(rand_gen), normal_dist(rand_gen), normal_dist(rand_gen) };
-        //     float orbit_angle = 360.0f / 1000.0f * i;
+        objects.emplace_back(resourceDir + "/model/rock", "rock.obj", general_shader, shadow_shader);
+        std::vector<InstanceBuffer::InstanceData> rocks;
+        glm::vec3 rock_offset{ 25, 0, 0 };
+        glm::vec3 planet_axis = glm::normalize(glm::vec3{ 0, 1, 0.5 });
+        std::vector<glm::mat4> rock_transforms;
+        std::mt19937 rand_gen{ std::random_device{}() };
+        std::normal_distribution<float> normal_dist{ 0, 1 };
+        for (int i = 0; i < 10000; ++i) {
+            glm::vec3 rand_offset{ normal_dist(rand_gen), normal_dist(rand_gen), normal_dist(rand_gen) };
+            float orbit_angle = 360.0f / 1000.0f * i;
 
-        //     glm::quat orbit_rotation = glm::angleAxis(glm::radians(orbit_angle),
-        //         glm::normalize(planet_axis));
-        //     glm::quat local_rotation = glm::angleAxis(normal_dist(rand_gen),
-        //         glm::normalize(rand_offset));
-        //     InstanceBuffer::InstanceData instance;
-        //     instance.translation_ = planet_pos +
-        //         orbit_rotation * (rock_offset + rand_offset);
-        //     instance.rotation_ = orbit_rotation * local_rotation;
-        //     instance.scale_ = glm::vec3{ 0.1 };
-        //     rocks.push_back(instance);
-        // }
-        // objects.back().setInstances(std::move(rocks));
+            glm::quat orbit_rotation = glm::angleAxis(glm::radians(orbit_angle),
+                glm::normalize(planet_axis));
+            glm::quat local_rotation = glm::angleAxis(normal_dist(rand_gen),
+                glm::normalize(rand_offset));
+            InstanceBuffer::InstanceData instance;
+            instance.translation_ = planet_pos +
+                orbit_rotation * (rock_offset + rand_offset);
+            instance.rotation_ = orbit_rotation * local_rotation;
+            instance.scale_ = glm::vec3{ 0.1 };
+            rocks.push_back(instance);
+        }
+        objects.back().setInstances(std::move(rocks));
 
         objects.push_back(createGrasses(resourceDir, general_shader, shadow_shader));
 
@@ -836,25 +844,27 @@ int main(int argc, char* argv[])
             }
         };
 
-        auto render_scene = [&](Camera &cam){
+        auto update_shadow_maps = [&]() {
             LightData &lights = win_data->lights;
             const float explode_magnitude = std::abs(static_cast<float>(sin(glfwGetTime())));
             explode_shader.setFloat("explode_magnitude", explode_magnitude);
             explode_shadow_shader.setFloat("explode_magnitude", explode_magnitude);
 
+            glm::ivec4 shadow_counts{ 0 };
+            // shadow_counts.x = lights.counts.x;
+            shadow_counts.z = lights.counts.z;
+
             glViewport(0, 0, shadow_map_size, shadow_map_size);
             glEnable(GL_DEPTH_TEST);
             glCullFace(GL_FRONT);
-            glDrawBuffer(GL_NONE);
-            glReadBuffer(GL_NONE);
 
-            for (int i = 0; i < lights.counts.x; ++i) {
+            for (int i = 0; i < shadow_counts.x; ++i) {
                 directional_shadow_fbos[i].bind();
                 glClear(GL_DEPTH_BUFFER_BIT);
                 render_shadow_casters(lights.directional[i].light_space_transform_);
             }
 
-            for (int i = 0; i < lights.counts.z; ++i) {
+            for (int i = 0; i < shadow_counts.z; ++i) {
                 spot_shadow_fbos[i].bind();
                 glClear(GL_DEPTH_BUFFER_BIT);
                 render_shadow_casters(lights.spot[i].light_space_transform_);
@@ -865,13 +875,12 @@ int main(int argc, char* argv[])
             RenderObject::invalidateCachedState();
 
             bindShadowMapSamplers(
-                general_shader, lights,
-                directional_shadow_maps, spot_shadow_maps, dummy_shadow_map, 16
+                general_shader, shadow_counts,
+                directional_shadow_maps, spot_shadow_maps, 16
             );
+        };
 
-            glViewport(0, 0, win_data->win_width, win_data->win_height);
-            glDrawBuffer(GL_BACK);
-            glReadBuffer(GL_BACK);
+        auto render_scene = [&](Camera &cam){
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             for (auto &m : objects) {
@@ -904,6 +913,8 @@ int main(int argc, char* argv[])
                 mirror_ms_texture.reallocate(w, h, GL_RGB, mirror_samples);
                 mirror_rbo.reallocate(GL_DEPTH24_STENCIL8, w, h, mirror_samples);
             }
+
+            update_shadow_maps();
 
             Camera mirror_camera{ win_data->camera };
             mirror_camera.yaw(-180);

@@ -65,6 +65,7 @@ layout (std140) uniform LightData {
 } lightData;
 
 struct ShadowMap {
+    ivec4 counts; // x: directional, y: point, z: spot — 有 shadow map 的光源数量
     sampler2D directional[2];
     sampler2D spot[4];
     sampler2D point_light[8];
@@ -103,7 +104,9 @@ vec3 calcDirectionalLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, i
 {
     vec3 result = vec3(0.0);
     for (int i = 0; i < lightData.counts.x; ++i) {
-        float shadow = shadowCalculation(lightData.directional[i].light_space_transform, shadowMap.directional[i]);
+        float shadow = (i < shadowMap.counts.x)
+            ? shadowCalculation(lightData.directional[i].light_space_transform, shadowMap.directional[i])
+            : 1.0;
         vec3 light_dir = lightData.directional[i].direction.xyz;
         float diff = max(dot(normal, -light_dir), 0.0);
         vec3 halfway = normalize(-light_dir + to_camera);
@@ -129,7 +132,9 @@ vec3 calcPointLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3
                             (lightData.point_light[i].attenuation.x +
                             lightData.point_light[i].attenuation.y * distance + 
                             lightData.point_light[i].attenuation.z * (distance * distance));
-        float shadow = shadowCalculation(lightData.point_light[i].light_space_transform, shadowMap.point_light[i]);
+        float shadow = (i < shadowMap.counts.y)
+            ? shadowCalculation(lightData.point_light[i].light_space_transform, shadowMap.point_light[i])
+            : 1.0;
         vec3 contrib = lightData.point_light[i].ambient.xyz * ambient
                      + lightData.point_light[i].diffuse.xyz * diff * diffuse * shadow
                      + lightData.point_light[i].specular.xyz * spec * specular * shadow;
@@ -160,7 +165,9 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
         float intensity = epsilon > 0.0
             ? clamp((theta - outer_cutoff) / epsilon, 0.0, 1.0)
             : (theta > outer_cutoff ? 1.0 : 0.0);
-        float shadow = shadowCalculation(lightData.spot[i].light_space_transform, shadowMap.spot[i]);
+        float shadow = (i < shadowMap.counts.z)
+            ? shadowCalculation(lightData.spot[i].light_space_transform, shadowMap.spot[i])
+            : 1.0;
         vec3 contrib = lightData.spot[i].ambient.xyz * ambient
                      + lightData.spot[i].diffuse.xyz * diff * diffuse * shadow
                      + lightData.spot[i].specular.xyz * spec * specular * shadow;

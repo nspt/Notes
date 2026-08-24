@@ -34,6 +34,8 @@ public:
     void setVec3(std::string_view name, const glm::vec3& value) const;
     void setVec4(GLint location, const glm::vec4& value) const;
     void setVec4(std::string_view name, const glm::vec4& value) const;
+    void setIVec4(GLint location, const glm::ivec4& value) const;
+    void setIVec4(std::string_view name, const glm::ivec4& value) const;
 
     void setMat3(GLint location, const glm::mat3& value) const;
     void setMat3(std::string_view name, const glm::mat3& value) const;

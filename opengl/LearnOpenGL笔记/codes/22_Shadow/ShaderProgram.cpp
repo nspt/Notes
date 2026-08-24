@@ -145,6 +145,21 @@ void ShaderProgram::setVec4(std::string_view name, const glm::vec4& value) const
     setVec4(location, value);
 }
 
+void ShaderProgram::setIVec4(GLint location, const glm::ivec4& value) const
+{
+    use();
+    glUniform4iv(location, 1, glm::value_ptr(value));
+}
+
+void ShaderProgram::setIVec4(std::string_view name, const glm::ivec4& value) const
+{
+    const GLint location = uniformLocation(name);
+    if (location < 0) {
+        throw std::runtime_error("uniform not found or optimized out: " + std::string(name));
+    }
+    setIVec4(location, value);
+}
+
 void ShaderProgram::setMat3(GLint location, const glm::mat3& value) const
 {
     use();
