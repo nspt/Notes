@@ -757,7 +757,7 @@ void createScene(const std::string &resourceDir, const LightData &lights)
         },
         false
     });
-    skybox_obj.action_ = [](ShaderProgram &shader, RenderPass pass) {
+    skybox_obj.before_action_ = [](ShaderProgram &shader, RenderPass pass) {
         if (pass != RenderPass::Draw || !current_render_camera) {
             return;
         }

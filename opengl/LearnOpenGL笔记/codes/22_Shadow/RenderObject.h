@@ -23,7 +23,8 @@ public:
     ShaderProgram directional_shadow_shader_; // 方向光 / 聚光（2D shadow map）
     ShaderProgram omni_shadow_shader_;        // 点光源 / 万向光（cubemap + GS）
     RenderState render_state_;
-    std::optional<Action> action_;
+    std::optional<Action> before_action_; // use() 之后、material 之前
+    std::optional<Action> after_action_;  // draw 之后
 
     void render(ShaderProgram *program = nullptr, std::optional<size_t> count = std::nullopt)
     {
@@ -35,11 +36,14 @@ public:
         }
         applyRenderState();
         program->use();
-        if (action_) {
-            (*action_)(*program, RenderPass::Draw);
+        if (before_action_) {
+            (*before_action_)(*program, RenderPass::Draw);
         }
         material_.apply(*program);
         mesh_.draw(count.has_value() ? count.value() : mesh_.instanceCount());
+        if (after_action_) {
+            (*after_action_)(*program, RenderPass::Draw);
+        }
     }
 
     void renderDirectionalShadow(std::optional<size_t> count = std::nullopt)
@@ -65,11 +69,14 @@ private:
             return;
         }
         shader.use();
-        if (action_) {
-            (*action_)(shader, RenderPass::Shadow);
+        if (before_action_) {
+            (*before_action_)(shader, RenderPass::Shadow);
         }
         material_.apply(shader);
         mesh_.draw(count.has_value() ? count.value() : mesh_.instanceCount());
+        if (after_action_) {
+            (*after_action_)(shader, RenderPass::Shadow);
+        }
     }
 
     void applyRenderState() const
