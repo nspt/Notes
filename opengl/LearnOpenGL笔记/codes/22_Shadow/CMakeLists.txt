@@ -3,6 +3,7 @@ target_compile_features(shadow PRIVATE cxx_std_20)
 target_sources(shadow
     PRIVATE
         main.cpp
+        Renderer.h Renderer.cpp
         Mesh.h Mesh.cpp
         ShaderProgram.h ShaderProgram.cpp
         Texture.h Texture.cpp
