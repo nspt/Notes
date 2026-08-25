@@ -15,9 +15,18 @@ public:
     bool pure_color_{ false };
     glm::vec3 color_{ 1.0f };
 
-    void apply(ShaderProgram &program)
+    void apply(ShaderProgram &program, unsigned first_unit = 0)
     {
-        unsigned bp = 0;
+        unsigned bp = first_unit;
+
+        // skybox.frag 用的是 uniform samplerCube skybox，不是 material.diffuse_texture
+        if (const GLint loc = program.uniformLocation("skybox"); loc >= 0) {
+            if (!diffuse_textures_.empty()) {
+                diffuse_textures_[0].bind(bp);
+                program.setInt(loc, static_cast<int>(bp));
+            }
+            return;
+        }
 
         if (const GLint loc = program.uniformLocation("material.diffuse_count"); loc >= 0) {
             program.setInt(loc, static_cast<int>(diffuse_textures_.size()));

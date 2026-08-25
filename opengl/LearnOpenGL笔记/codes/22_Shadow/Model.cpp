@@ -26,7 +26,10 @@ Model::Model(std::vector<RenderObject> objects)
 {}
 
 Model::Model(const std::string_view &dir, const std::string_view &file,
-             ShaderProgram render_shader, ShaderProgram shadow_shader, bool flipUV)
+             ShaderProgram render_shader,
+             ShaderProgram directional_shadow_shader,
+             ShaderProgram omni_shadow_shader,
+             bool flipUV)
 {
     std::string path{ dir };
     path.push_back('/');
@@ -47,7 +50,8 @@ Model::Model(const std::string_view &dir, const std::string_view &file,
 
     for (auto &obj : objects_) {
         obj.render_shader_ = render_shader;
-        obj.shadow_shader_ = shadow_shader;
+        obj.directional_shadow_shader_ = directional_shadow_shader;
+        obj.omni_shadow_shader_ = omni_shadow_shader;
     }
 }
 
@@ -143,10 +147,25 @@ void Model::setRenderShader(ShaderProgram shader)
     }
 }
 
-void Model::setShadowShader(ShaderProgram shader)
+void Model::setDirectionalShadowShader(ShaderProgram shader)
 {
     for (auto &obj : objects_) {
-        obj.shadow_shader_ = shader;
+        obj.directional_shadow_shader_ = shader;
+    }
+}
+
+void Model::setOmniShadowShader(ShaderProgram shader)
+{
+    for (auto &obj : objects_) {
+        obj.omni_shadow_shader_ = shader;
+    }
+}
+
+void Model::setShadowShaders(ShaderProgram directional, ShaderProgram omni)
+{
+    for (auto &obj : objects_) {
+        obj.directional_shadow_shader_ = directional;
+        obj.omni_shadow_shader_ = omni;
     }
 }
 
@@ -157,9 +176,16 @@ void Model::render(ShaderProgram *program)
     }
 }
 
-void Model::renderShadow(ShaderProgram *program)
+void Model::renderDirectionalShadow()
 {
     for (auto &obj : objects_) {
-        obj.renderShadow(program);
+        obj.renderDirectionalShadow();
+    }
+}
+
+void Model::renderOmniShadow()
+{
+    for (auto &obj : objects_) {
+        obj.renderOmniShadow();
     }
 }

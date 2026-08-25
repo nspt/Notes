@@ -18,15 +18,20 @@ public:
     Model(std::vector<RenderObject> objects);
     Model(const std::string_view &dir, const std::string_view &file,
           ShaderProgram render_shader = ShaderProgram{},
-          ShaderProgram shadow_shader = ShaderProgram{},
+          ShaderProgram directional_shadow_shader = ShaderProgram{},
+          ShaderProgram omni_shadow_shader = ShaderProgram{},
           bool flipUV = true);
     
     void setInstances(InstanceBuffer ibo);
     void setRenderShader(ShaderProgram shader);
-    void setShadowShader(ShaderProgram shader);
+    void setDirectionalShadowShader(ShaderProgram shader);
+    void setOmniShadowShader(ShaderProgram shader);
+    // 同时清空/设置两种阴影 shader（如灯具不投射阴影）
+    void setShadowShaders(ShaderProgram directional, ShaderProgram omni);
 
     void render(ShaderProgram *program = nullptr);
-    void renderShadow(ShaderProgram *program = nullptr);
+    void renderDirectionalShadow();
+    void renderOmniShadow();
 
     std::vector<RenderObject> objects_;
 private:

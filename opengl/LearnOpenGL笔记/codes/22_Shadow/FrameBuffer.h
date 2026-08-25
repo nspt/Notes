@@ -2,6 +2,7 @@
 
 #include "Texture2D.h"
 #include "Texture2DMS.h"
+#include "TextureCubeMap.h"
 #include <memory>
 #include <map>
 #include <stdexcept>
@@ -134,6 +135,24 @@ public:
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, id, 0);
     }
 
+    // 挂接整个 cubemap（layered，配合 geometry shader 一次写 6 面）
+    void attachTexture(GLenum attachment, TextureCubeMap texture)
+    {
+        const GLuint id = texture.id();
+        data_->attachments_.insert_or_assign(attachment, std::move(texture));
+        bind();
+        glFramebufferTexture(GL_FRAMEBUFFER, attachment, id, 0);
+    }
+
+    // 挂接 cubemap 的单个面（逐面渲染时用）
+    void attachTexture(GLenum attachment, TextureCubeMap texture, GLenum cube_face)
+    {
+        const GLuint id = texture.id();
+        data_->attachments_.insert_or_assign(attachment, std::move(texture));
+        bind();
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, cube_face, id, 0);
+    }
+
     void attachRBO(GLenum attachment, RenderBuffer rbo)
     {
         const GLuint id = rbo.id();
@@ -173,7 +192,7 @@ public:
 
 private:
     struct Data {
-        using Attachment = std::variant<Texture2D, Texture2DMS, RenderBuffer, RenderBufferMS>;
+        using Attachment = std::variant<Texture2D, Texture2DMS, TextureCubeMap, RenderBuffer, RenderBufferMS>;
         unsigned int id_ = 0;
         std::map<GLenum, Attachment> attachments_;
     };

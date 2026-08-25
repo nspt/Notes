@@ -41,6 +41,8 @@ public:
     void setMat3(std::string_view name, const glm::mat3& value) const;
     void setMat4(GLint location, const glm::mat4& value) const;
     void setMat4(std::string_view name, const glm::mat4& value) const;
+    void setMat4Arr(GLint location, const glm::mat4 *values, GLsizei count) const;
+    void setMat4Arr(std::string_view name, const glm::mat4 *values, GLsizei count) const;
 
     void setFLoatArr(GLint location, GLfloat *value, GLsizei count) const;
     void setFLoatArr(std::string_view name, GLfloat *value, GLsizei count) const;

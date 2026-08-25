@@ -4,6 +4,7 @@
 
 class Texture2D : public Texture {
 public:
+    Texture2D() : Texture{ GL_TEXTURE_2D } {}
     Texture2D(int width, int height, GLenum internalFormat, GLenum format, void *data = nullptr);
     Texture2D(int width, int height, GLenum format, void *data = nullptr);
     explicit Texture2D(const std::string& path, bool flipVertically = true, bool srgb = true);

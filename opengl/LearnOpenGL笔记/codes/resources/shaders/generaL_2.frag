@@ -69,9 +69,10 @@ struct ShadowMap {
     float directional_bias[2];
     float spot_bias[4];
     float point_bias[8];
+    float point_far[8]; // 与 cube_shadow 写入的 far_plane 一致
     sampler2D directional[2];
     sampler2D spot[4];
-    sampler2D point_light[8];
+    samplerCube point_light[8];
 };
 uniform ShadowMap shadowMap;
 
@@ -81,12 +82,6 @@ float shadowCalculation(mat4 light_space_transform, sampler2D depth_map, float b
     vec3 coords = light_space_frag_pos.xyz / light_space_frag_pos.w;
     coords = coords * 0.5 + 0.5;
 
-    // 不在光源投影体积内：该光源不贡献光照
-    // if (coords.x < 0.0 || coords.x > 1.0 ||
-    //     coords.y < 0.0 || coords.y > 1.0 ||
-    //     coords.z < 0.0 || coords.z > 1.0) {
-    //     return 0.0;
-    // }
     if (coords.z > 1.0)
         return 0.0;
 
@@ -100,6 +95,34 @@ float shadowCalculation(mat4 light_space_transform, sampler2D depth_map, float b
         }
     }
     return shadow / 9.0;
+}
+
+// 点光源 / 万向阴影：cubemap 存的是 length(frag-light) / far_plane
+float pointShadowCalculation(vec3 light_pos, samplerCube depth_map, float bias, float far_plane)
+{
+    vec3 frag_to_light = fs_in.v_world_pos - light_pos;
+    float cur_depth = length(frag_to_light);
+    if (cur_depth > far_plane)
+        return 0.0;
+
+    // 简易 PCF（LearnOpenGL 偏移采样）
+    vec3 sample_offsets[20] = vec3[](
+        vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
+        vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+        vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+        vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+        vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+    );
+    float view_distance = length(cam_data.pos.xyz - fs_in.v_world_pos);
+    float disk_radius = (1.0 + (view_distance / far_plane)) / 25.0;
+
+    float lit = 0.0;
+    for (int i = 0; i < 20; ++i) {
+        float closest_depth = texture(depth_map, frag_to_light + sample_offsets[i] * disk_radius).r;
+        closest_depth *= far_plane;
+        lit += cur_depth - bias > closest_depth ? 0.0 : 1.0;
+    }
+    return lit / 20.0;
 }
 
 vec3 calcDirectionalLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 diffuse, in vec3 specular)
@@ -135,13 +158,14 @@ vec3 calcPointLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3
         float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
         float attenuation = 1.0 /
                             (lightData.point_light[i].attenuation.x +
-                            lightData.point_light[i].attenuation.y * distance + 
+                            lightData.point_light[i].attenuation.y * distance +
                             lightData.point_light[i].attenuation.z * (distance * distance));
         float shadow = (i < shadowMap.counts.y)
-            ? shadowCalculation(
-                lightData.point_light[i].light_space_transform,
+            ? pointShadowCalculation(
+                lightData.point_light[i].position.xyz,
                 shadowMap.point_light[i],
-                shadowMap.point_bias[i])
+                shadowMap.point_bias[i],
+                shadowMap.point_far[i])
             : 1.0;
         vec3 contrib = lightData.point_light[i].ambient.xyz * ambient
                      + lightData.point_light[i].diffuse.xyz * diff * diffuse * shadow

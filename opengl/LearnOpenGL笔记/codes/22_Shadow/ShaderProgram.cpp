@@ -190,6 +190,23 @@ void ShaderProgram::setMat4(std::string_view name, const glm::mat4& value) const
     setMat4(location, value);
 }
 
+void ShaderProgram::setMat4Arr(GLint location, const glm::mat4 *values, GLsizei count) const
+{
+    use();
+    glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(values[0]));
+}
+
+void ShaderProgram::setMat4Arr(std::string_view name, const glm::mat4 *values, GLsizei count) const
+{
+    std::string n{ name };
+    n += "[0]";
+    const GLint location = uniformLocation(n);
+    if (location < 0) {
+        throw std::runtime_error("uniform not found or optimized out: " + n);
+    }
+    setMat4Arr(location, values, count);
+}
+
 void ShaderProgram::setFLoatArr(GLint location, GLfloat *value, GLsizei count) const
 {
     use();
