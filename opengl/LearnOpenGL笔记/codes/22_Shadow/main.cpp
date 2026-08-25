@@ -19,23 +19,56 @@
 // 场景几何 / 物体创建（业务）
 // ---------------------------------------------------------------------------
 
-Mesh createQuadMesh(InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::InstanceData{} })
+Mesh createQuadMesh(
+    InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::InstanceData{} },
+    bool include_inner_faces = true)
 {
-    static std::vector<Vertex> vertices = {
+    // 外侧：朝 +Z；内侧另建顶点，法线翻转到 -Z
+    static const std::vector<Vertex> vertices_outer = {
         { { -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-        { { 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-        { { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
-        { { -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+        { {  1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+        { {  1.0f,  1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+        { { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
     };
-    static std::vector<std::uint32_t> indices = {
+    static const std::vector<std::uint32_t> indices_outer = {
         0, 1, 2,
         0, 2, 3,
-        0, 2, 1,
-        0, 3, 2
     };
-    static VertexBuffer vbo{ vertices };
-    static IndexBuffer ebo{ indices };
-    return Mesh{ vbo, ebo, std::move(ibo) };
+
+    // 沿 -normal 微偏移，避免与外侧共面 z-fighting（四边形在 z=0，不能靠 position*inset）
+    static const std::vector<Vertex> vertices_with_inner = [] {
+        constexpr float inset = 0.002f;
+        std::vector<Vertex> verts = vertices_outer;
+        verts.reserve(vertices_outer.size() * 2);
+        for (const Vertex &v : vertices_outer) {
+            verts.push_back(Vertex{
+                v.position - v.normal * inset,
+                v.texCoord,
+                -v.normal
+            });
+        }
+        return verts;
+    }();
+    static const std::vector<std::uint32_t> indices_with_inner = [] {
+        std::vector<std::uint32_t> idx = indices_outer;
+        const std::uint32_t base = static_cast<std::uint32_t>(vertices_outer.size());
+        for (size_t i = 0; i + 2 < indices_outer.size(); i += 3) {
+            idx.push_back(indices_outer[i] + base);
+            idx.push_back(indices_outer[i + 2] + base);
+            idx.push_back(indices_outer[i + 1] + base);
+        }
+        return idx;
+    }();
+
+    static VertexBuffer vbo_outer{ vertices_outer };
+    static IndexBuffer ebo_outer{ indices_outer };
+    static VertexBuffer vbo_with_inner{ vertices_with_inner };
+    static IndexBuffer ebo_with_inner{ indices_with_inner };
+
+    if (include_inner_faces) {
+        return Mesh{ vbo_with_inner, ebo_with_inner, std::move(ibo) };
+    }
+    return Mesh{ vbo_outer, ebo_outer, std::move(ibo) };
 }
 
 Mesh createCubeMesh(
