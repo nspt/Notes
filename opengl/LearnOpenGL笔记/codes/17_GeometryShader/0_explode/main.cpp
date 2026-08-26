@@ -492,8 +492,8 @@ int main(int argc, char* argv[])
         lightDataUBO.bindBase(0);
 
         auto general_shader = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/16env_cube.vert",
-            resourceDir + "shaders/16env_cube.frag"
+            resourceDir + "shaders/17_geometry_shader/16env_cube.vert",
+            resourceDir + "shaders/17_geometry_shader/16env_cube.frag"
         );
         general_shader->setUniformBlockBinding("LightData", 0);
 
@@ -564,9 +564,9 @@ int main(int argc, char* argv[])
         Model explode_model = model;
         explode_model.transform_ = glm::translate(explode_model.transform_, glm::vec3{ 0, 5, 0 });
         explode_model.program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/17explode.vert",
-            resourceDir + "shaders/17explode.frag",
-            resourceDir + "shaders/17explode.geom"
+            resourceDir + "shaders/17_geometry_shader/17explode.vert",
+            resourceDir + "shaders/17_geometry_shader/17explode.frag",
+            resourceDir + "shaders/17_geometry_shader/17explode.geom"
         );
         explode_model.program_->setUniformBlockBinding("LightData", 0);
 
@@ -574,8 +574,8 @@ int main(int argc, char* argv[])
         quad_obj.mesh_ = createQuadMesh();
         quad_obj.material_ = std::make_shared<Material>();
         quad_obj.material_->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/15kernel.vert",
-            resourceDir + "shaders/15kernel.frag"
+            resourceDir + "shaders/17_geometry_shader/15kernel.vert",
+            resourceDir + "shaders/17_geometry_shader/15kernel.frag"
         );
         float identity_kernel[9] {
             0, 0, 0,
@@ -628,8 +628,8 @@ int main(int argc, char* argv[])
         auto cubemap_texture = std::make_shared<TextureCubeMap>(faces, false);
         skybox.material_->diffuse_textures_.push_back(cubemap_texture);
         skybox.material_->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/16cubemap.vert",
-            resourceDir + "shaders/16cubemap.frag"
+            resourceDir + "shaders/17_geometry_shader/16cubemap.vert",
+            resourceDir + "shaders/17_geometry_shader/16cubemap.frag"
         );
     
         win_data->last_time = steady_clock::now();

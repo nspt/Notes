@@ -440,8 +440,8 @@ int main(int argc, char* argv[])
         auto cube_mesh = createCubeMesh();
         auto cube_material = std::make_shared<Material>();
         cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/10model.vert",
-            resourceDir + "shaders/10model.frag"
+            resourceDir + "shaders/10_model_loading/10model.vert",
+            resourceDir + "shaders/10_model_loading/10model.frag"
         );
         cube_material->program_->setUniformBlockBinding("LightData", 0);
         cube_material->diffuse_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/container2.png"));
@@ -450,8 +450,8 @@ int main(int argc, char* argv[])
 
         auto light_src_material = std::make_shared<Material>();
         light_src_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/08light_src.vert.glsl",
-            resourceDir + "shaders/08light_src.frag.glsl"
+            resourceDir + "shaders/10_model_loading/08light_src.vert.glsl",
+            resourceDir + "shaders/10_model_loading/08light_src.frag.glsl"
         );
         light_src_material->program_->setVec3("light_color", glm::vec3{ 1.0, 1.0, 1.0 });
         

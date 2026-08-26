@@ -103,8 +103,8 @@ try {
     auto window = initContextAndWindow();
 
     ShaderProgram shaderProg {
-        resourceDir + "shaders/04texture.vert.glsl",
-        resourceDir + "shaders/04texture.frag.glsl"
+        resourceDir + "shaders/04_texture/04texture.vert.glsl",
+        resourceDir + "shaders/04_texture/04texture.frag.glsl"
     };
     shaderProg.setInt("sampler0", 0);
     shaderProg.setInt("sampler1", 1);

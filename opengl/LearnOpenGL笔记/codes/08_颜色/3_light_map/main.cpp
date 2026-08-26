@@ -291,8 +291,8 @@ int main(int argc, char* argv[])
         auto cube_mesh = createCubeMesh();
         auto cube_material = std::make_shared<Material>();
         cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/08light_map.vert",
-            resourceDir + "shaders/08light_map.frag"
+            resourceDir + "shaders/08_lighting/08light_map.vert",
+            resourceDir + "shaders/08_lighting/08light_map.frag"
         );
         cube_material->diffuse_map_ = std::make_shared<Texture2D>(resourceDir + "/textures/container2.png");
         cube_material->specular_map_ = std::make_shared<Texture2D>(resourceDir + "/textures/container2_specular.png");
@@ -321,8 +321,8 @@ int main(int argc, char* argv[])
         auto light_cube_material = std::make_shared<Material>();
         light_cube_material = std::make_shared<Material>();
         light_cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/08light_src.vert.glsl",
-            resourceDir + "shaders/08light_src.frag.glsl"
+            resourceDir + "shaders/08_lighting/08light_src.vert.glsl",
+            resourceDir + "shaders/08_lighting/08light_src.frag.glsl"
         );
         RenderObject light_cube;
         light_cube.mesh_ = cube_mesh;

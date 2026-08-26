@@ -1,4 +1,4 @@
-﻿#include <chrono>
+#include <chrono>
 #include <cstddef>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -544,22 +544,22 @@ int main(int argc, char* argv[])
         std::vector<Model> objects;
 
         ShaderProgram phong_shader{
-            resourceDir + "shaders/general_0.vert",
-            resourceDir + "shaders/general_0.frag"
+            resourceDir + "shaders/20_blinn_phong/general_0.vert",
+            resourceDir + "shaders/20_blinn_phong/general_0.frag"
         };
         phong_shader.setUniformBlockBinding("LightData", 0);
         phong_shader.setUniformBlockBinding("CamData", 1);
 
         ShaderProgram blinn_phong_shader{
-            resourceDir + "shaders/general_1.vert",
-            resourceDir + "shaders/general_1.frag"
+            resourceDir + "shaders/20_blinn_phong/general_1.vert",
+            resourceDir + "shaders/20_blinn_phong/general_1.frag"
         };
         blinn_phong_shader.setUniformBlockBinding("LightData", 0);
         blinn_phong_shader.setUniformBlockBinding("CamData", 1);
 
         ShaderProgram skybox_shader{
-            resourceDir + "shaders/skybox_0.vert",
-            resourceDir + "shaders/skybox_0.frag"
+            resourceDir + "shaders/20_blinn_phong/skybox_0.vert",
+            resourceDir + "shaders/20_blinn_phong/skybox_0.frag"
         };
         skybox_shader.setUniformBlockBinding("CamData", 1);
         skybox_shader.setInt("skybox", 0);

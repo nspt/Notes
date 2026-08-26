@@ -231,8 +231,8 @@ int main(int argc, char* argv[])
         glfwSetWindowUserPointer(window, win_data.get());
     
         ShaderProgram shaderProg {
-            resourceDir + "shaders/06coordinates.vert.glsl",
-            resourceDir + "shaders/06coordinates.frag.glsl"
+            resourceDir + "shaders/07_camera/06coordinates.vert.glsl",
+            resourceDir + "shaders/07_camera/06coordinates.frag.glsl"
         };
         shaderProg.setInt("sampler0", 0);
         shaderProg.setInt("sampler1", 1);

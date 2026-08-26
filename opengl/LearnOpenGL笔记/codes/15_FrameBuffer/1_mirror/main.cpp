@@ -496,8 +496,8 @@ int main(int argc, char* argv[])
         lightDataUBO.bindBase(0);
 
         auto general_shader = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/13blending.vert",
-            resourceDir + "shaders/13blending.frag"
+            resourceDir + "shaders/15_framebuffer/13blending.vert",
+            resourceDir + "shaders/15_framebuffer/13blending.frag"
         );
         general_shader->setUniformBlockBinding("LightData", 0);
 
@@ -569,8 +569,8 @@ int main(int argc, char* argv[])
         quad_obj.mesh_ = createQuadMesh();
         quad_obj.material_ = std::make_shared<Material>();
         quad_obj.material_->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/15kernel.vert",
-            resourceDir + "shaders/15kernel.frag"
+            resourceDir + "shaders/15_framebuffer/15kernel.vert",
+            resourceDir + "shaders/15_framebuffer/15kernel.frag"
         );
         float identity_kernel[9] {
             0, 0, 0,

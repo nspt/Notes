@@ -104,8 +104,8 @@ try {
     auto window = initContextAndWindow();
 
     ShaderProgram shaderProg {
-        resourceDir + "shaders/05transform.vert.glsl",
-        resourceDir + "shaders/05transform.frag.glsl"
+        resourceDir + "shaders/05_transformation/05transform.vert.glsl",
+        resourceDir + "shaders/05_transformation/05transform.frag.glsl"
     };
     shaderProg.setInt("sampler0", 0);
     shaderProg.setInt("sampler1", 1);

@@ -268,8 +268,8 @@ RenderObject createCube(const std::string &resourceDir, const glm::mat4 &project
     obj.material_ = std::make_shared<Material>();
 
     obj.material_->program_ = std::make_shared<ShaderProgram>(
-        resourceDir + "shaders/08material.vert.glsl",
-        resourceDir + "shaders/08material.frag.glsl"
+        resourceDir + "shaders/08_lighting/08material.vert.glsl",
+        resourceDir + "shaders/08_lighting/08material.frag.glsl"
     );
     obj.material_->program_->setMat4("projection", projection);
 
@@ -288,8 +288,8 @@ RenderObject createLightCube(const std::string &resourceDir, const glm::mat4 &pr
     obj.material_ = std::make_shared<Material>();
 
     obj.material_->program_ = std::make_shared<ShaderProgram>(
-        resourceDir + "shaders/08light_src.vert.glsl",
-        resourceDir + "shaders/08light_src.frag.glsl"
+        resourceDir + "shaders/08_lighting/08light_src.vert.glsl",
+        resourceDir + "shaders/08_lighting/08light_src.frag.glsl"
     );
     obj.material_->program_->setMat4("projection", projection);
     return obj;
@@ -321,8 +321,8 @@ int main(int argc, char* argv[])
         auto cube_mesh = createCubeMesh();
         auto cube_material = std::make_shared<Material>();
         cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/08material.vert.glsl",
-            resourceDir + "shaders/08material.frag.glsl"
+            resourceDir + "shaders/08_lighting/08material.vert.glsl",
+            resourceDir + "shaders/08_lighting/08material.frag.glsl"
         );
         cube_material->ambient_ = glm::vec3{ 1.0f, 0.5f, 0.31f };
         cube_material->diffuse_ = glm::vec3{ 1.0f, 0.5f, 0.31f };
@@ -352,8 +352,8 @@ int main(int argc, char* argv[])
         auto light_cube_material = std::make_shared<Material>();
         light_cube_material = std::make_shared<Material>();
         light_cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/08light_src.vert.glsl",
-            resourceDir + "shaders/08light_src.frag.glsl"
+            resourceDir + "shaders/08_lighting/08light_src.vert.glsl",
+            resourceDir + "shaders/08_lighting/08light_src.frag.glsl"
         );
         RenderObject light_cube;
         light_cube.mesh_ = cube_mesh;

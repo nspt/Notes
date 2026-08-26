@@ -11,6 +11,7 @@
 #include "Mesh.h"
 #include "Model.h"
 #include "RenderObject.h"
+#include "RenderState.h"
 #include "Renderer.h"
 #include "Texture2D.h"
 #include "TextureCubeMap.h"
@@ -268,25 +269,44 @@ std::vector<RenderObject> createCubes(Renderer &r, const std::string &resourceDi
     return result;
 }
 
-static void setupStencilMaskWriter(RenderObject &obj, GLint ref = 1)
-{
-    obj.render_state_.stencil_test_ = true;
-    obj.render_state_.stencil_func_ = GL_ALWAYS;
-    obj.render_state_.stencil_ref_ = ref;
-    obj.render_state_.stencil_mask_ = 0xff;
-    obj.render_state_.stencil_sfail_ = GL_KEEP;
-    obj.render_state_.stencil_dpfail_ = GL_KEEP;
-    obj.render_state_.stencil_dppass_ = GL_REPLACE;
-    obj.render_state_.stencil_write_mask_ = 0xff;
-}
-
 std::vector<RenderObject> createOutlineCubes(Renderer &r, const std::string &resourceDir)
 {
+    auto setupStencilMaskWriter = [](RenderObject &obj, GLint ref = 1) {
+        obj.render_state_.stencil_test_ = true;
+        obj.render_state_.stencil_func_ = GL_ALWAYS;
+        obj.render_state_.stencil_ref_ = ref;
+        obj.render_state_.stencil_mask_ = 0xff;
+        obj.render_state_.stencil_sfail_ = GL_KEEP;
+        obj.render_state_.stencil_dpfail_ = GL_KEEP;
+        obj.render_state_.stencil_dppass_ = GL_REPLACE;
+        obj.render_state_.stencil_write_mask_ = 0xff;
+    };
+    auto setupOutline = [](RenderObject &obj, GLint ref = 1) {
+        obj.render_state_.stencil_test_ = true;
+        obj.render_state_.stencil_func_ = GL_NOTEQUAL;
+        obj.render_state_.stencil_ref_ = ref;
+        obj.render_state_.stencil_mask_ = 0xff;
+        obj.render_state_.stencil_sfail_ = GL_KEEP;
+        obj.render_state_.stencil_dpfail_ = GL_KEEP;
+        obj.render_state_.stencil_dppass_ = GL_KEEP;
+        obj.render_state_.stencil_write_mask_ = 0x00;
+    };
     auto cubes = createCubes(r, resourceDir);
     std::vector<RenderObject> result;
-    result.reserve(cubes.size());
+    result.reserve(cubes.size() * 2);
     for (auto &cube : cubes) {
         setupStencilMaskWriter(cube);
+        result.push_back(cube);
+    }
+    for (auto &cube : cubes) {
+        setupOutline(cube);
+        auto instances = cube.mesh_.instanceBuffer().data();
+        for (auto &instance : instances) {
+            instance.scale_ *= 1.05f;
+        }
+        cube.mesh_.setInstanceBuffer(InstanceBuffer{ std::move(instances) });
+        cube.material_.pure_color_ = true;
+        cube.material_.color_ = glm::vec3{ 0.0, 0.0, 1.0 };
         result.push_back(std::move(cube));
     }
     return result;

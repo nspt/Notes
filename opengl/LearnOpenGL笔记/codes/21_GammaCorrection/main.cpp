@@ -1,4 +1,4 @@
-﻿#include <chrono>
+#include <chrono>
 #include <cstddef>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -548,31 +548,31 @@ int main(int argc, char* argv[])
         std::vector<Model> transparent_objects;
 
         ShaderProgram general_shader{
-            resourceDir + "shaders/general_0.vert",
-            resourceDir + "shaders/general_0.frag"
+            resourceDir + "shaders/21_gamma_correction/general_0.vert",
+            resourceDir + "shaders/21_gamma_correction/general_0.frag"
         };
         general_shader.setUniformBlockBinding("LightData", 0);
         general_shader.setUniformBlockBinding("CamData", 1);
 
         ShaderProgram visual_normal_shader{
-            resourceDir + "shaders/visual_normal_0.vert",
-            resourceDir + "shaders/visual_normal_0.frag",
-            resourceDir + "shaders/visual_normal_0.geom"
+            resourceDir + "shaders/21_gamma_correction/visual_normal_0.vert",
+            resourceDir + "shaders/21_gamma_correction/visual_normal_0.frag",
+            resourceDir + "shaders/21_gamma_correction/visual_normal_0.geom"
         };
         visual_normal_shader.setUniformBlockBinding("CamData", 1);
         visual_normal_shader.setVec3("normal_color", glm::vec3{ 0, 1, 0 });
 
         ShaderProgram explode_shader {
-            resourceDir + "shaders/explode_0.vert",
-            resourceDir + "shaders/explode_0.frag",
-            resourceDir + "shaders/explode_0.geom"
+            resourceDir + "shaders/21_gamma_correction/explode_0.vert",
+            resourceDir + "shaders/21_gamma_correction/explode_0.frag",
+            resourceDir + "shaders/21_gamma_correction/explode_0.geom"
         };
         explode_shader.setUniformBlockBinding("LightData", 0);
         explode_shader.setUniformBlockBinding("CamData", 1);
         
         ShaderProgram skybox_shader{
-            resourceDir + "shaders/skybox_0.vert",
-            resourceDir + "shaders/skybox_0.frag"
+            resourceDir + "shaders/21_gamma_correction/skybox_0.vert",
+            resourceDir + "shaders/21_gamma_correction/skybox_0.frag"
         };
         skybox_shader.setUniformBlockBinding("CamData", 1);
         skybox_shader.setInt("skybox", 0);
@@ -675,8 +675,8 @@ int main(int argc, char* argv[])
 
         RenderObject mirror;
         mirror.material_.program_ = ShaderProgram {
-            resourceDir + "shaders/kernel_1.vert",
-            resourceDir + "shaders/kernel_1.frag"
+            resourceDir + "shaders/21_gamma_correction/kernel_1.vert",
+            resourceDir + "shaders/21_gamma_correction/kernel_1.frag"
         };
         float identity_kernel[9] {
             0, 0, 0,

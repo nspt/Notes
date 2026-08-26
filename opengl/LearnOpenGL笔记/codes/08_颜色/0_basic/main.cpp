@@ -239,8 +239,8 @@ int main(int argc, char* argv[])
     
         glm::vec3 lightColor{ 1.0f, 1.0f, 1.0f };
         ShaderProgram objShaderProg {
-            resourceDir + "shaders/08color_basic.vert.glsl",
-            resourceDir + "shaders/08color_basic.frag.glsl"
+            resourceDir + "shaders/08_lighting/08color_basic.vert.glsl",
+            resourceDir + "shaders/08_lighting/08color_basic.frag.glsl"
         };
         objShaderProg.setVec3("lightColor", lightColor);
         objShaderProg.setVec3("objectColor", glm::vec3{ 1.0f, 0.5f, 0.31f });
@@ -253,8 +253,8 @@ int main(int argc, char* argv[])
         objShaderProg.setMat4("projTrans", projTrans);
 
         ShaderProgram lightShaderProg {
-            resourceDir + "shaders/08color_basic.vert.glsl",
-            resourceDir + "shaders/08color_basic_light.frag.glsl"
+            resourceDir + "shaders/08_lighting/08color_basic.vert.glsl",
+            resourceDir + "shaders/08_lighting/08color_basic_light.frag.glsl"
         };
         lightShaderProg.setVec3("lightColor", lightColor);
         lightShaderProg.setMat4("projTrans", projTrans);

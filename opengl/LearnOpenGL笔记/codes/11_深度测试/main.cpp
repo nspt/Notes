@@ -401,8 +401,8 @@ int main(int argc, char* argv[])
         auto cube_mesh = createCubeMesh();
         auto cube_material = std::make_shared<Material>();
         cube_material->program_ = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/11depth_test.vert",
-            resourceDir + "shaders/11depth_test.frag"
+            resourceDir + "shaders/11_depth_test/11depth_test.vert",
+            resourceDir + "shaders/11_depth_test/11depth_test.frag"
         );
         cube_material->program_->setUniformBlockBinding("LightData", 0);
         cube_material->diffuse_textures_.push_back(std::make_shared<Texture2D>(resourceDir + "/textures/container2.png"));

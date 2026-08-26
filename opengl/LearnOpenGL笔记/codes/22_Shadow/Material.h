@@ -61,5 +61,12 @@ public:
         if (const GLint loc = program.uniformLocation("material.color"); loc >= 0) {
             program.setVec3(loc, color_);
         }
+        // 本课未用环境反射/折射；显式关闭，避免 AMD 上未绑定 samplerCube 与 unit0 冲突
+        if (const GLint loc = program.uniformLocation("material.reflect_cube_exist"); loc >= 0) {
+            program.setBool(loc, false);
+        }
+        if (const GLint loc = program.uniformLocation("material.refract_cube_exist"); loc >= 0) {
+            program.setBool(loc, false);
+        }
     }
 };

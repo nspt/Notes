@@ -59,7 +59,6 @@ Mesh::Mesh(const Mesh &rhs)
     : Mesh{ rhs.vbo_, rhs.ebo_ }
 {
     setInstanceBuffer(rhs.ibo_.data());
-    vao_.unbind();
 }
 
 Mesh& Mesh::operator=(const Mesh &rhs)

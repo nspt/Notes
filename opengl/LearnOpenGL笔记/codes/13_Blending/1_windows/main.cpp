@@ -465,8 +465,8 @@ int main(int argc, char* argv[])
         lightDataUBO.bindBase(0);
 
         auto general_shader = std::make_shared<ShaderProgram>(
-            resourceDir + "shaders/13blending.vert",
-            resourceDir + "shaders/13blending.frag"
+            resourceDir + "shaders/13_blending/13blending.vert",
+            resourceDir + "shaders/13_blending/13blending.frag"
         );
         general_shader->setUniformBlockBinding("LightData", 0);
 

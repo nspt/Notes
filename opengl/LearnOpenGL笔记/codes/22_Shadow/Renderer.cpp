@@ -163,48 +163,48 @@ void Renderer::loadShaders(const std::string &resourceDir)
     };
 
     add("general",
-        resourceDir + "shaders/generaL_2.vert",
-        resourceDir + "shaders/generaL_2.frag");
+        resourceDir + "shaders/22_shadow/generaL_2.vert",
+        resourceDir + "shaders/22_shadow/generaL_2.frag");
     shaders_.at("general").setUniformBlockBinding("LightData", 0);
     shaders_.at("general").setUniformBlockBinding("CamData", 1);
 
     add("shadow",
-        resourceDir + "shaders/shadow_0.vert",
-        resourceDir + "shaders/shadow_0.frag");
+        resourceDir + "shaders/22_shadow/shadow_0.vert",
+        resourceDir + "shaders/22_shadow/shadow_0.frag");
 
     add("cube_shadow",
-        resourceDir + "shaders/cube_shadow_0.vert",
-        resourceDir + "shaders/cube_shadow_0.frag",
-        resourceDir + "shaders/cube_shadow_0.geom");
+        resourceDir + "shaders/22_shadow/cube_shadow_0.vert",
+        resourceDir + "shaders/22_shadow/cube_shadow_0.frag",
+        resourceDir + "shaders/22_shadow/cube_shadow_0.geom");
 
     add("visual_normal",
-        resourceDir + "shaders/visual_normal_0.vert",
-        resourceDir + "shaders/visual_normal_0.frag",
-        resourceDir + "shaders/visual_normal_0.geom");
+        resourceDir + "shaders/22_shadow/visual_normal_0.vert",
+        resourceDir + "shaders/22_shadow/visual_normal_0.frag",
+        resourceDir + "shaders/22_shadow/visual_normal_0.geom");
     shaders_.at("visual_normal").setUniformBlockBinding("CamData", 1);
     shaders_.at("visual_normal").setVec3("normal_color", glm::vec3{ 0, 1, 0 });
 
     add("explode",
-        resourceDir + "shaders/explode_0.vert",
-        resourceDir + "shaders/explode_0.frag",
-        resourceDir + "shaders/explode_0.geom");
+        resourceDir + "shaders/22_shadow/explode_1.vert",
+        resourceDir + "shaders/22_shadow/explode_1.frag",
+        resourceDir + "shaders/22_shadow/explode_1.geom");
     shaders_.at("explode").setUniformBlockBinding("LightData", 0);
     shaders_.at("explode").setUniformBlockBinding("CamData", 1);
 
     add("explode_shadow",
-        resourceDir + "shaders/shadow_explode_0.vert",
-        resourceDir + "shaders/shadow_explode_0.frag",
-        resourceDir + "shaders/shadow_explode_0.geom");
+        resourceDir + "shaders/22_shadow/shadow_explode_0.vert",
+        resourceDir + "shaders/22_shadow/shadow_explode_0.frag",
+        resourceDir + "shaders/22_shadow/shadow_explode_0.geom");
 
     add("skybox",
-        resourceDir + "shaders/skybox_0.vert",
-        resourceDir + "shaders/skybox_0.frag");
+        resourceDir + "shaders/22_shadow/skybox_0.vert",
+        resourceDir + "shaders/22_shadow/skybox_0.frag");
     shaders_.at("skybox").setUniformBlockBinding("CamData", 1);
     shaders_.at("skybox").setInt("skybox", 0);
 
     add("kernel",
-        resourceDir + "shaders/kernel_1.vert",
-        resourceDir + "shaders/kernel_1.frag");
+        resourceDir + "shaders/22_shadow/kernel_1.vert",
+        resourceDir + "shaders/22_shadow/kernel_1.frag");
 }
 
 void Renderer::initShadowResources()
@@ -525,6 +525,7 @@ void Renderer::updateShadowMaps()
     glCullFace(GL_BACK);
     RenderObject::invalidateCachedState();
     shadow_.data.apply(shaders_.at("general"), 16);
+    shadow_.data.apply(shaders_.at("explode"), 16);
 }
 
 void Renderer::renderScene(Camera &cam)

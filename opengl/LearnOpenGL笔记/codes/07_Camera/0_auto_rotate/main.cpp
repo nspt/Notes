@@ -141,8 +141,8 @@ try {
     auto window = initContextAndWindow();
 
     ShaderProgram shaderProg {
-        resourceDir + "shaders/06coordinates.vert.glsl",
-        resourceDir + "shaders/06coordinates.frag.glsl"
+        resourceDir + "shaders/07_camera/06coordinates.vert.glsl",
+        resourceDir + "shaders/07_camera/06coordinates.frag.glsl"
     };
     shaderProg.setInt("sampler0", 0);
     shaderProg.setInt("sampler1", 1);
