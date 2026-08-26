@@ -47,7 +47,18 @@ ShaderProgram::ShaderProgram(const std::filesystem::path& vertexShaderPath,
 
 void ShaderProgram::use() const
 {
-    glUseProgram(data_->id_);
+    const GLuint id = data_->id_;
+    if (s_cache_valid_ && s_cached_id_ == id) {
+        return;
+    }
+    glUseProgram(id);
+    s_cached_id_ = id;
+    s_cache_valid_ = true;
+}
+
+void ShaderProgram::invalidateCachedProgram() noexcept
+{
+    s_cache_valid_ = false;
 }
 
 GLuint ShaderProgram::id() const noexcept

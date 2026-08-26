@@ -21,6 +21,9 @@ public:
 
     GLuint id() const noexcept;
 
+    // 外部直接改了当前 program（如 glUseProgram）后调用，避免缓存与真实状态不一致
+    static void invalidateCachedProgram() noexcept;
+
     void setBool(GLint location, bool value) const;
     void setBool(std::string_view name, bool value) const;
     void setInt(GLint location, int value) const;
@@ -69,4 +72,7 @@ private:
             delete p;
         }
     };
+
+    static inline bool s_cache_valid_{ false };
+    static inline GLuint s_cached_id_{ 0 };
 };

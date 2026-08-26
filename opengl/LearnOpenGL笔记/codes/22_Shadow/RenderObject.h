@@ -60,6 +60,7 @@ public:
     static void invalidateCachedState() noexcept
     {
         s_cache_valid_ = false;
+        ShaderProgram::invalidateCachedProgram();
     }
 
 private:
