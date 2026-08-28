@@ -547,31 +547,31 @@ int main(int argc, char* argv[])
         std::vector<Model> transparent_objects;
 
         ShaderProgram general_shader{
-            resourceDir + "shaders/18_instancing/general_0.vert",
-            resourceDir + "shaders/18_instancing/general_0.frag"
+            resourceDir + "shaders/18_instancing/general.vert",
+            resourceDir + "shaders/18_instancing/general.frag"
         };
         general_shader.setUniformBlockBinding("LightData", 0);
         general_shader.setUniformBlockBinding("CamData", 1);
 
         ShaderProgram visual_normal_shader{
-            resourceDir + "shaders/18_instancing/visual_normal_0.vert",
-            resourceDir + "shaders/18_instancing/visual_normal_0.frag",
-            resourceDir + "shaders/18_instancing/visual_normal_0.geom"
+            resourceDir + "shaders/18_instancing/visual_normal.vert",
+            resourceDir + "shaders/18_instancing/visual_normal.frag",
+            resourceDir + "shaders/18_instancing/visual_normal.geom"
         };
         visual_normal_shader.setUniformBlockBinding("CamData", 1);
         visual_normal_shader.setVec3("normal_color", glm::vec3{ 0, 1, 0 });
 
         ShaderProgram explode_shader {
-            resourceDir + "shaders/18_instancing/explode_0.vert",
-            resourceDir + "shaders/18_instancing/explode_0.frag",
-            resourceDir + "shaders/18_instancing/explode_0.geom"
+            resourceDir + "shaders/18_instancing/explode.vert",
+            resourceDir + "shaders/18_instancing/explode.frag",
+            resourceDir + "shaders/18_instancing/explode.geom"
         };
         explode_shader.setUniformBlockBinding("LightData", 0);
         explode_shader.setUniformBlockBinding("CamData", 1);
         
         ShaderProgram skybox_shader{
-            resourceDir + "shaders/18_instancing/skybox_0.vert",
-            resourceDir + "shaders/18_instancing/skybox_0.frag"
+            resourceDir + "shaders/18_instancing/skybox.vert",
+            resourceDir + "shaders/18_instancing/skybox.frag"
         };
         skybox_shader.setUniformBlockBinding("CamData", 1);
         skybox_shader.setInt("skybox", 0);
@@ -671,8 +671,8 @@ int main(int argc, char* argv[])
 
         RenderObject mirror;
         mirror.material_.program_ = ShaderProgram {
-            resourceDir + "shaders/18_instancing/kernel_0.vert",
-            resourceDir + "shaders/18_instancing/kernel_0.frag"
+            resourceDir + "shaders/18_instancing/kernel.vert",
+            resourceDir + "shaders/18_instancing/kernel.frag"
         };
         float identity_kernel[9] {
             0, 0, 0,

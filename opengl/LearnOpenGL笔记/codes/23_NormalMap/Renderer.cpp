@@ -89,7 +89,7 @@ void Renderer::initLightData()
     );
 
     data.counts.y = 1;
-    data.point[0].pos_ = glm::vec4{ 0.0f, -50.0f, 0.0f, 1.0f };
+    data.point[0].pos_ = glm::vec4{ 10.0f, 0.0f, 0.0f, 1.0f };
     data.point[0].ambient_ = glm::vec4{ 0.05f };
     data.point[0].diffuse_ = glm::vec4{ 1.0f };
     data.point[0].specular_ = glm::vec4{ 1.0f };
@@ -163,52 +163,53 @@ void Renderer::loadShaders(const std::string &resourceDir)
     };
 
     add("general",
-        resourceDir + "shaders/22_shadow/general.vert",
-        resourceDir + "shaders/22_shadow/general.frag");
+        resourceDir + "shaders/23_normal_map/general.vert",
+        resourceDir + "shaders/23_normal_map/general.frag");
     shaders_.at("general").setUniformBlockBinding("LightData", 0);
     shaders_.at("general").setUniformBlockBinding("CamData", 1);
 
     add("shadow",
-        resourceDir + "shaders/22_shadow/shadow.vert",
-        resourceDir + "shaders/22_shadow/shadow.frag");
+        resourceDir + "shaders/23_normal_map/shadow.vert",
+        resourceDir + "shaders/23_normal_map/shadow.frag");
 
     add("cube_shadow",
-        resourceDir + "shaders/22_shadow/cube_shadow.vert",
-        resourceDir + "shaders/22_shadow/cube_shadow.frag",
-        resourceDir + "shaders/22_shadow/cube_shadow.geom");
+        resourceDir + "shaders/23_normal_map/cube_shadow.vert",
+        resourceDir + "shaders/23_normal_map/cube_shadow.frag",
+        resourceDir + "shaders/23_normal_map/cube_shadow.geom");
 
     add("visual_normal",
-        resourceDir + "shaders/22_shadow/visual_normal.vert",
-        resourceDir + "shaders/22_shadow/visual_normal.frag",
-        resourceDir + "shaders/22_shadow/visual_normal.geom");
+        resourceDir + "shaders/23_normal_map/visual_normal.vert",
+        resourceDir + "shaders/23_normal_map/visual_normal.frag",
+        resourceDir + "shaders/23_normal_map/visual_normal.geom");
     shaders_.at("visual_normal").setUniformBlockBinding("CamData", 1);
     shaders_.at("visual_normal").setVec3("normal_color", glm::vec3{ 0, 1, 0 });
 
     add("explode",
-        resourceDir + "shaders/22_shadow/explode.vert",
-        resourceDir + "shaders/22_shadow/explode.frag",
-        resourceDir + "shaders/22_shadow/explode.geom");
+        resourceDir + "shaders/23_normal_map/explode.vert",
+        resourceDir + "shaders/23_normal_map/explode.frag",
+        resourceDir + "shaders/23_normal_map/explode.geom");
     shaders_.at("explode").setUniformBlockBinding("LightData", 0);
     shaders_.at("explode").setUniformBlockBinding("CamData", 1);
 
     add("explode_shadow",
-        resourceDir + "shaders/22_shadow/shadow_explode.vert",
-        resourceDir + "shaders/22_shadow/shadow_explode.frag",
-        resourceDir + "shaders/22_shadow/shadow_explode.geom");
+        resourceDir + "shaders/23_normal_map/shadow_explode.vert",
+        resourceDir + "shaders/23_normal_map/shadow_explode.frag",
+        resourceDir + "shaders/23_normal_map/shadow_explode.geom");
 
     add("skybox",
-        resourceDir + "shaders/22_shadow/skybox.vert",
-        resourceDir + "shaders/22_shadow/skybox.frag");
+        resourceDir + "shaders/23_normal_map/skybox.vert",
+        resourceDir + "shaders/23_normal_map/skybox.frag");
     shaders_.at("skybox").setUniformBlockBinding("CamData", 1);
     shaders_.at("skybox").setInt("skybox", 0);
 
     add("kernel",
-        resourceDir + "shaders/22_shadow/kernel.vert",
-        resourceDir + "shaders/22_shadow/kernel.frag");
+        resourceDir + "shaders/23_normal_map/kernel.vert",
+        resourceDir + "shaders/23_normal_map/kernel.frag");
 }
 
 void Renderer::initShadowResources()
 {
+    return;
     shadow_ = ShadowResources{};
     const auto &lights = win_data_->lights;
 
@@ -531,7 +532,7 @@ void Renderer::updateShadowMaps()
 void Renderer::renderScene(Camera &cam)
 {
     current_render_camera_ = &cam;
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for (auto &m : objects_) {
         m.render();
