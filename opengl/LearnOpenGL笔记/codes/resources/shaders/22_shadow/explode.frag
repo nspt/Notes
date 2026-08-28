@@ -4,6 +4,8 @@ in GS_OUT {
     vec3 v_world_pos;
     vec3 v_world_normal;
     vec2 v_tex_coord;
+    vec4 v_directional_light_space_pos[2];
+    vec4 v_spot_light_space_pos[4];
 } fs_in;
 
 out vec4 out_color;
@@ -44,7 +46,6 @@ struct PointLight {
     vec4 diffuse;
     vec4 specular;
     vec4 attenuation; // x: constant, y: linear, z: quadratic
-    mat4 light_space_transform;
 };
 
 struct SpotLight {
@@ -76,9 +77,8 @@ struct ShadowMap {
 };
 uniform ShadowMap shadowMap;
 
-float shadowCalculation(mat4 light_space_transform, sampler2D depth_map, float bias)
+float shadowCalculation(vec4 light_space_frag_pos, sampler2D depth_map, float bias)
 {
-    vec4 light_space_frag_pos = light_space_transform * vec4(fs_in.v_world_pos, 1.0);
     vec3 coords = light_space_frag_pos.xyz / light_space_frag_pos.w;
     coords = coords * 0.5 + 0.5;
 
@@ -129,7 +129,7 @@ vec3 calcDirectionalLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, i
     for (int i = 0; i < lightData.counts.x; ++i) {
         float shadow = (i < shadowMap.counts.x)
             ? shadowCalculation(
-                lightData.directional[i].light_space_transform,
+                fs_in.v_directional_light_space_pos[i],
                 shadowMap.directional[i],
                 shadowMap.directional_bias[i])
             : 1.0;
@@ -197,7 +197,7 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
             : (theta > outer_cutoff ? 1.0 : 0.0);
         float shadow = (i < shadowMap.counts.z)
             ? shadowCalculation(
-                lightData.spot[i].light_space_transform,
+                fs_in.v_spot_light_space_pos[i],
                 shadowMap.spot[i],
                 shadowMap.spot_bias[i])
             : 1.0;

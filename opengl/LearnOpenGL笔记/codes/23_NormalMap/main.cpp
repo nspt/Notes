@@ -330,14 +330,13 @@ void createScene(Renderer &r, const std::string &resourceDir)
 
     RenderObject no_normal_wall;
     no_normal_wall.render_shader_ = general;
-    no_normal_wall.mesh_ = createQuadMesh();
-    no_normal_wall.mesh_.setInstanceBuffer(InstanceBuffer::InstanceData{ .translation_ = glm::vec3{ -1.1, 0, -0.5 } });
+    no_normal_wall.mesh_ = createQuadMesh(InstanceBuffer::InstanceData{ .translation_ = glm::vec3{ -1.1, 0, -0.5 } });
     no_normal_wall.material_.diffuse_textures_.push_back(Texture2D(resourceDir + "/textures/brickwall.jpg"));
     no_normal_wall.material_.specular_textures_.push_back(no_normal_wall.material_.diffuse_textures_.back());
     r.objects().push_back(no_normal_wall);
 
     RenderObject normal_wall = no_normal_wall;
-    normal_wall.material_.normal_textures_.push_back(Texture2D(resourceDir + "/textures/brickwall_normal.jpg", true, false));
+    normal_wall.material_.normal_textures_.push_back(Texture2D(resourceDir + "/textures/brickwall_normal.jpg"));
     normal_wall.mesh_.setInstanceBuffer(InstanceBuffer::InstanceData{ .translation_ = glm::vec3{ 1.1, 0, -0.5 } });
     r.objects().push_back(normal_wall);
 
@@ -454,7 +453,7 @@ try {
     renderer.beginFrameTiming();
     float point_light_angle = 0.0f;
     while (!renderer.shouldClose()) {
-        point_light_angle += renderer.winData().delta_time.count() * 0.2f;
+        point_light_angle += renderer.winData().delta_time.count() * 0.6f;
         rotatePointLightsAroundY(renderer, point_light_angle);
         renderer.renderFrame();
         renderer.endFrame();

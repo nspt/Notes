@@ -8,6 +8,8 @@ in VS_OUT {
     vec3 v_world_normal;
     vec2 v_tex_coord;
     vec3 v_world_tangent;
+    vec4 v_directional_light_space_pos[2];
+    vec4 v_spot_light_space_pos[4];
 } gs_in[];
 
 out GS_OUT {
@@ -15,6 +17,8 @@ out GS_OUT {
     vec3 v_world_normal;
     vec2 v_tex_coord;
     vec3 v_world_tangent;
+    vec4 v_directional_light_space_pos[2];
+    vec4 v_spot_light_space_pos[4];
 } gs_out;
 
 layout (std140) uniform CamData {
@@ -22,6 +26,39 @@ layout (std140) uniform CamData {
     mat4 projection;
     vec4 pos;
 } cam_data;
+
+struct DirectionalLight {
+    vec4 direction;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    mat4 light_space_transform;
+};
+
+struct SpotLight {
+    vec4 position;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 direction;
+    vec4 attenuation;
+    mat4 light_space_transform;
+};
+
+struct PointLight {
+    vec4 position;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 attenuation;
+};
+
+layout (std140) uniform LightData {
+    ivec4 counts;
+    DirectionalLight directional[2];
+    SpotLight spot[4];
+    PointLight point_light[8];
+} lightData;
 
 uniform float explode_magnitude;
 
@@ -50,6 +87,16 @@ void main()
         gs_out.v_world_normal = gs_in[i].v_world_normal;
         gs_out.v_tex_coord = gs_in[i].v_tex_coord;
         gs_out.v_world_tangent = gs_in[i].v_world_tangent;
+
+        vec4 exploded_world_pos = vec4(gs_out.v_world_pos, 1.0);
+        for (int j = 0; j < 2; ++j) {
+            gs_out.v_directional_light_space_pos[j] =
+                lightData.directional[j].light_space_transform * exploded_world_pos;
+        }
+        for (int j = 0; j < 4; ++j) {
+            gs_out.v_spot_light_space_pos[j] =
+                lightData.spot[j].light_space_transform * exploded_world_pos;
+        }
         EmitVertex();
     }
     EndPrimitive();

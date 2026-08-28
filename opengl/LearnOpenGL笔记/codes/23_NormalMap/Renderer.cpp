@@ -94,7 +94,6 @@ void Renderer::initLightData()
     data.point[0].diffuse_ = glm::vec4{ 1.0f };
     data.point[0].specular_ = glm::vec4{ 1.0f };
     data.point[0].attenuation = glm::vec4{ 1.0f, 0.0f, 0.0f, 0.0f };
-    data.point[0].light_space_transform_ = glm::mat4{ 1.0f };
 
     data.counts.z = 1;
     data.spot[0].pos_ = glm::vec4{ 0, 10, 10, 1 };

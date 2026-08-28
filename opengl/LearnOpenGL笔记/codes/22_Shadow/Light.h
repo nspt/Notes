@@ -33,7 +33,6 @@ struct alignas(16) PointLight {
     glm::vec4 diffuse_;
     glm::vec4 specular_;
     glm::vec4 attenuation;   // x: constant, y: linear, z: quadratic, w: reserve
-    glm::mat4 light_space_transform_;
 };
 
 struct alignas(16) SpotLight {
