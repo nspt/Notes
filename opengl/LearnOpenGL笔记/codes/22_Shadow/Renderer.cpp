@@ -204,6 +204,9 @@ void Renderer::loadShaders(const std::string &resourceDir)
     add("kernel",
         resourceDir + "shaders/22_shadow/kernel.vert",
         resourceDir + "shaders/22_shadow/kernel.frag");
+
+    applyShadowLightingUniforms(shaders_.at("general"), win_data_->lights);
+    applyShadowLightingUniforms(shaders_.at("explode"), win_data_->lights);
 }
 
 void Renderer::initShadowResources()

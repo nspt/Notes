@@ -11,6 +11,9 @@ out VS_OUT {
     vec3 v_world_normal;
     vec2 v_tex_coord;
     vec3 v_world_tangent;
+    vec3 v_view_vec;
+    vec3 v_to_point_light[8];
+    vec3 v_to_spot_light[4];
     vec4 v_directional_light_space_pos[2];
     vec4 v_spot_light_space_pos[4];
 } vs_out;
@@ -72,5 +75,15 @@ void main()
     for (int i = 0; i < 4; ++i) {
         vs_out.v_spot_light_space_pos[i] =
             lightData.spot[i].light_space_transform * world_pos;
+    }
+
+    vs_out.v_view_vec = cam_data.pos.xyz - world_pos.xyz;
+    for (int i = 0; i < lightData.counts.y; ++i) {
+        vs_out.v_to_point_light[i] =
+            lightData.point_light[i].position.xyz - world_pos.xyz;
+    }
+    for (int i = 0; i < lightData.counts.z; ++i) {
+        vs_out.v_to_spot_light[i] =
+            lightData.spot[i].position.xyz - world_pos.xyz;
     }
 }

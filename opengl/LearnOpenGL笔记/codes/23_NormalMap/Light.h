@@ -59,9 +59,15 @@ struct ShadowData {
     std::pair<TextureCubeMap, float> point[MAX_POINT_LIGHT];
     float point_far[MAX_POINT_LIGHT]{};
 
+    static constexpr float kShadowMapSize = 2048.0f;
+
     void apply(ShaderProgram &shader, unsigned first_unit = 0) const
     {
         shader.setIVec4("shadowMap.counts", counts);
+        shader.setVec2(
+            "shadowMap.shadow_map_texel_size",
+            glm::vec2{ 1.0f / kShadowMapSize }
+        );
 
         unsigned unit = first_unit;
         for (int i = 0; i < counts.x; ++i) {
@@ -85,6 +91,19 @@ struct ShadowData {
         }
     }
 };
+
+inline void applyShadowLightingUniforms(ShaderProgram &shader, const LightData &lights)
+{
+    for (int i = 0; i < MAX_SPOT_LIGHT; ++i) {
+        float inv_epsilon = 0.0f;
+        if (i < lights.counts.z) {
+            const float epsilon =
+                lights.spot[i].direction_inner_.w - lights.spot[i].attenuation_outter_.w;
+            inv_epsilon = epsilon > 0.0f ? 1.0f / epsilon : 0.0f;
+        }
+        shader.setFloat(std::format("shadowMap.spot_inv_epsilon[{}]", i), inv_epsilon);
+    }
+}
 
 
 inline glm::mat4 calcDirectionalLightSpaceTransform(

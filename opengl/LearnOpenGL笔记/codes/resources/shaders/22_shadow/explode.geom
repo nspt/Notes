@@ -7,6 +7,9 @@ in VS_OUT {
     vec3 v_world_pos;
     vec3 v_world_normal;
     vec2 v_tex_coord;
+    vec3 v_view_vec;
+    vec3 v_to_point_light[8];
+    vec3 v_to_spot_light[4];
     vec4 v_directional_light_space_pos[2];
     vec4 v_spot_light_space_pos[4];
 } gs_in[];
@@ -15,6 +18,9 @@ out GS_OUT {
     vec3 v_world_pos;
     vec3 v_world_normal;
     vec2 v_tex_coord;
+    vec3 v_view_vec;
+    vec3 v_to_point_light[8];
+    vec3 v_to_spot_light[4];
     vec4 v_directional_light_space_pos[2];
     vec4 v_spot_light_space_pos[4];
 } gs_out;
@@ -93,6 +99,16 @@ void main()
         for (int j = 0; j < 4; ++j) {
             gs_out.v_spot_light_space_pos[j] =
                 lightData.spot[j].light_space_transform * exploded_world_pos;
+        }
+
+        gs_out.v_view_vec = cam_data.pos.xyz - gs_out.v_world_pos;
+        for (int j = 0; j < lightData.counts.y; ++j) {
+            gs_out.v_to_point_light[j] =
+                lightData.point_light[j].position.xyz - gs_out.v_world_pos;
+        }
+        for (int j = 0; j < lightData.counts.z; ++j) {
+            gs_out.v_to_spot_light[j] =
+                lightData.spot[j].position.xyz - gs_out.v_world_pos;
         }
         EmitVertex();
     }

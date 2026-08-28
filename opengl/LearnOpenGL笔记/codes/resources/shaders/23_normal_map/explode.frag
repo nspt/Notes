@@ -5,6 +5,9 @@ in GS_OUT {
     vec3 v_world_normal;
     vec2 v_tex_coord;
     vec3 v_world_tangent;
+    vec3 v_view_vec;
+    vec3 v_to_point_light[8];
+    vec3 v_to_spot_light[4];
     vec4 v_directional_light_space_pos[2];
     vec4 v_spot_light_space_pos[4];
 } fs_in;
@@ -69,6 +72,8 @@ layout (std140) uniform LightData {
 
 struct ShadowMap {
     ivec4 counts; // x: directional, y: point, z: spot
+    vec2 shadow_map_texel_size;
+    float spot_inv_epsilon[4];
     float directional_bias[2];
     float spot_bias[4];
     float point_bias[8];
@@ -107,20 +112,22 @@ float shadowCalculation(vec4 light_space_frag_pos, sampler2D depth_map, float bi
         return 0.0;
 
     float cur_depth = coords.z;
-    vec2 texel_size = 1.0 / vec2(textureSize(depth_map, 0));
     float shadow = 0.0;
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
-            float closest_depth = texture(depth_map, coords.xy + vec2(x, y) * texel_size).r;
+            float closest_depth = texture(
+                depth_map,
+                coords.xy + vec2(x, y) * shadowMap.shadow_map_texel_size
+            ).r;
             shadow += cur_depth - bias > closest_depth ? 0.0 : 1.0;
         }
     }
     return shadow / 9.0;
 }
 
-float pointShadowCalculation(vec3 light_pos, samplerCube depth_map, float bias, float far_plane)
+float pointShadowCalculation(vec3 to_light_vec, samplerCube depth_map, float bias, float far_plane, float view_distance)
 {
-    vec3 frag_to_light = fs_in.v_world_pos - light_pos;
+    vec3 frag_to_light = -to_light_vec;
     float cur_depth = length(frag_to_light);
     if (cur_depth > far_plane)
         return 0.0;
@@ -132,7 +139,6 @@ float pointShadowCalculation(vec3 light_pos, samplerCube depth_map, float bias, 
         vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
         vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
     );
-    float view_distance = length(cam_data.pos.xyz - fs_in.v_world_pos);
     float disk_radius = (1.0 + (view_distance / far_plane)) / 25.0;
 
     float lit = 0.0;
@@ -165,13 +171,13 @@ vec3 calcDirectionalLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, i
     return result;
 }
 
-vec3 calcPointLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 diffuse, in vec3 specular)
+vec3 calcPointLights(in vec3 normal, in vec3 to_camera, in float view_distance, in vec3 ambient, in vec3 diffuse, in vec3 specular)
 {
     vec3 result = vec3(0.0);
     for (int i = 0; i < lightData.counts.y; ++i) {
-        vec3 to_light = lightData.point_light[i].position.xyz - fs_in.v_world_pos;
-        float distance = length(to_light);
-        to_light = normalize(to_light);
+        vec3 to_light_vec = fs_in.v_to_point_light[i];
+        float distance = length(to_light_vec);
+        vec3 to_light = to_light_vec / distance;
         float diff = max(dot(normal, to_light), 0.0);
         vec3 halfway = normalize(to_light + to_camera);
         float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
@@ -181,10 +187,11 @@ vec3 calcPointLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3
                             lightData.point_light[i].attenuation.z * (distance * distance));
         float shadow = (i < shadowMap.counts.y)
             ? pointShadowCalculation(
-                lightData.point_light[i].position.xyz,
+                to_light_vec,
                 shadowMap.point_light[i],
                 shadowMap.point_bias[i],
-                shadowMap.point_far[i])
+                shadowMap.point_far[i],
+                view_distance)
             : 1.0;
         vec3 contrib = lightData.point_light[i].ambient.xyz * ambient
                      + lightData.point_light[i].diffuse.xyz * diff * diffuse * shadow
@@ -198,9 +205,9 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
 {
     vec3 result = vec3(0.0);
     for (int i = 0; i < lightData.counts.z; ++i) {
-        vec3 to_light = lightData.spot[i].position.xyz - fs_in.v_world_pos;
-        float distance = length(to_light);
-        to_light = normalize(to_light);
+        vec3 to_light_vec = fs_in.v_to_spot_light[i];
+        float distance = length(to_light_vec);
+        vec3 to_light = to_light_vec / distance;
         float diff = max(dot(normal, to_light), 0.0);
         vec3 halfway = normalize(to_light + to_camera);
         float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
@@ -208,13 +215,12 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
                             (lightData.spot[i].attenuation.x +
                             lightData.spot[i].attenuation.y * distance +
                             lightData.spot[i].attenuation.z * (distance * distance));
-        vec3 light_dir = normalize(lightData.spot[i].direction.xyz);
-        float inner_cutoff = lightData.spot[i].direction.w;
+        vec3 light_dir = lightData.spot[i].direction.xyz;
         float outer_cutoff = lightData.spot[i].attenuation.w;
         float theta = dot(to_light, -light_dir);
-        float epsilon = inner_cutoff - outer_cutoff;
-        float intensity = epsilon > 0.0
-            ? clamp((theta - outer_cutoff) / epsilon, 0.0, 1.0)
+        float inv_epsilon = shadowMap.spot_inv_epsilon[i];
+        float intensity = inv_epsilon > 0.0
+            ? clamp((theta - outer_cutoff) * inv_epsilon, 0.0, 1.0)
             : (theta > outer_cutoff ? 1.0 : 0.0);
         float shadow = (i < shadowMap.counts.z)
             ? shadowCalculation(
@@ -233,7 +239,8 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
 void main()
 {
     vec3 normal = getFragNormalInWorld();
-    vec3 to_camera = normalize(cam_data.pos.xyz - fs_in.v_world_pos);
+    vec3 to_camera = normalize(fs_in.v_view_vec);
+    float view_distance = length(fs_in.v_view_vec);
 
     if (material.pure_color) {
         out_color = vec4(material.color, 1);
@@ -246,7 +253,7 @@ void main()
 
         if (material.diffuse_count > 0) {
             ambient = texture(material.diffuse_texture[0], fs_in.v_tex_coord);
-            diffuse = texture(material.diffuse_texture[0], fs_in.v_tex_coord);
+            diffuse = ambient;
         }
 
         if (material.specular_count > 0) {
@@ -267,7 +274,7 @@ void main()
         }
 
         vec3 directional_color = calcDirectionalLights(normal, to_camera, ambient.rgb, diffuse.rgb, specular.rgb);
-        vec3 point_color = calcPointLights(normal, to_camera, ambient.rgb, diffuse.rgb, specular.rgb);
+        vec3 point_color = calcPointLights(normal, to_camera, view_distance, ambient.rgb, diffuse.rgb, specular.rgb);
         vec3 spot_color = calcSpotLights(normal, to_camera, ambient.rgb, diffuse.rgb, specular.rgb);
 
         out_color = vec4(directional_color + point_color + spot_color + env_reflect.rgb + env_refract.rgb, diffuse.a);
