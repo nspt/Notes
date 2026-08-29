@@ -72,9 +72,12 @@ struct ShadowMap {
     ivec4 counts; // x: directional, y: point, z: spot — 有 shadow map 的光源数量
     vec2 shadow_map_texel_size;
     float spot_inv_epsilon[4];
-    float directional_bias[2];
-    float spot_bias[4];
-    float point_bias[8];
+    float directional_min_bias[2];
+    float directional_slope_bias[2];
+    float spot_min_bias[4];
+    float spot_slope_bias[4];
+    float point_min_bias[8];
+    float point_slope_bias[8];
     float point_far[8]; // 与 cube_shadow 写入的 far_plane 一致
     sampler2D directional[2];
     sampler2D spot[4];
@@ -135,13 +138,15 @@ vec3 calcDirectionalLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, i
 {
     vec3 result = vec3(0.0);
     for (int i = 0; i < lightData.counts.x; ++i) {
+        vec3 light_dir = lightData.directional[i].direction.xyz;
+        float bias = dot(normal, light_dir) * shadowMap.directional_slope_bias[i]
+                   + shadowMap.directional_min_bias[i];
         float shadow = (i < shadowMap.counts.x)
             ? shadowCalculation(
                 fs_in.v_directional_light_space_pos[i],
                 shadowMap.directional[i],
-                shadowMap.directional_bias[i])
+                bias)
             : 1.0;
-        vec3 light_dir = lightData.directional[i].direction.xyz;
         float diff = max(dot(normal, -light_dir), 0.0);
         vec3 halfway = normalize(-light_dir + to_camera);
         float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
@@ -159,6 +164,9 @@ vec3 calcPointLights(in vec3 normal, in vec3 to_camera, in float view_distance, 
         vec3 to_light_vec = fs_in.v_to_point_light[i];
         float distance = length(to_light_vec);
         vec3 to_light = to_light_vec / distance;
+        vec3 light_dir = -to_light;
+        float bias = dot(normal, light_dir) * shadowMap.point_slope_bias[i]
+                   + shadowMap.point_min_bias[i];
         float diff = max(dot(normal, to_light), 0.0);
         vec3 halfway = normalize(to_light + to_camera);
         float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
@@ -170,7 +178,7 @@ vec3 calcPointLights(in vec3 normal, in vec3 to_camera, in float view_distance, 
             ? pointShadowCalculation(
                 to_light_vec,
                 shadowMap.point_light[i],
-                shadowMap.point_bias[i],
+                bias,
                 shadowMap.point_far[i],
                 view_distance)
             : 1.0;
@@ -189,6 +197,9 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
         vec3 to_light_vec = fs_in.v_to_spot_light[i];
         float distance = length(to_light_vec);
         vec3 to_light = to_light_vec / distance;
+        vec3 light_dir = lightData.spot[i].direction.xyz;
+        float bias = dot(normal, light_dir) * shadowMap.spot_slope_bias[i]
+                   + shadowMap.spot_min_bias[i];
         float diff = max(dot(normal, to_light), 0.0);
         vec3 halfway = normalize(to_light + to_camera);
         float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
@@ -196,7 +207,6 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
                             (lightData.spot[i].attenuation.x +
                             lightData.spot[i].attenuation.y * distance + 
                             lightData.spot[i].attenuation.z * (distance * distance));
-        vec3 light_dir = lightData.spot[i].direction.xyz;
         float outer_cutoff = lightData.spot[i].attenuation.w;
         float theta = dot(to_light, -light_dir);
         float inv_epsilon = shadowMap.spot_inv_epsilon[i];
@@ -207,7 +217,7 @@ vec3 calcSpotLights(in vec3 normal, in vec3 to_camera, in vec3 ambient, in vec3 
             ? shadowCalculation(
                 fs_in.v_spot_light_space_pos[i],
                 shadowMap.spot[i],
-                shadowMap.spot_bias[i])
+                bias)
             : 1.0;
         vec3 contrib = lightData.spot[i].ambient.xyz * ambient
                      + lightData.spot[i].diffuse.xyz * diff * diffuse * shadow

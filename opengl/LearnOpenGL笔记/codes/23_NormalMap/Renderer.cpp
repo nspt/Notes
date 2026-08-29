@@ -217,18 +217,20 @@ void Renderer::initShadowResources()
 
     for (int i = 0; i < lights.counts.x; ++i) {
         shadow_.data.directional[i] = {
-            createShadowMapTexture(ShadowResources::map_size), 0.00001f
+            createShadowMapTexture(ShadowResources::map_size),
+            ShadowBias{ 0.00001f, 0.00005f }
         };
-        shadow_.directional_fbos.push_back(createShadowMapFBO(shadow_.data.directional[i].first));
+        shadow_.directional_fbos.push_back(createShadowMapFBO(shadow_.data.directional[i].texture));
     }
     shadow_.data.counts.x = lights.counts.x;
 
     for (int i = 0; i < lights.counts.y; ++i) {
         shadow_.data.point[i] = {
-            createShadowMapTextureCube(ShadowResources::map_size), 0.15f
+            createShadowMapTextureCube(ShadowResources::map_size),
+            ShadowBias{ 0.005f, 0.145f }
         };
         shadow_.data.point_far[i] = ShadowResources::point_far;
-        shadow_.point_fbos.push_back(createShadowMapFBO(shadow_.data.point[i].first));
+        shadow_.point_fbos.push_back(createShadowMapFBO(shadow_.data.point[i].texture));
         shadow_.point_light_spaces.push_back(calcPointLightSpaceTransforms(
             glm::vec3(lights.point[i].pos_),
             ShadowResources::point_near,
@@ -239,9 +241,10 @@ void Renderer::initShadowResources()
 
     for (int i = 0; i < lights.counts.z; ++i) {
         shadow_.data.spot[i] = {
-            createShadowMapTexture(ShadowResources::map_size), 0.00001f
+            createShadowMapTexture(ShadowResources::map_size),
+            ShadowBias{ 0.00001f, 0.00005f }
         };
-        shadow_.spot_fbos.push_back(createShadowMapFBO(shadow_.data.spot[i].first));
+        shadow_.spot_fbos.push_back(createShadowMapFBO(shadow_.data.spot[i].texture));
     }
     shadow_.data.counts.z = lights.counts.z;
 }

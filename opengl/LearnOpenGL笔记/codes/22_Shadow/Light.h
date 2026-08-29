@@ -52,11 +52,26 @@ struct LightData {
     PointLight point[MAX_POINT_LIGHT];
 };
 
+struct ShadowBias {
+    float min_bias = 0.0f;
+    float slope_bias = 0.0f;
+};
+
+struct ShadowMap2D {
+    Texture2D texture;
+    ShadowBias bias;
+};
+
+struct ShadowMapCube {
+    TextureCubeMap texture;
+    ShadowBias bias;
+};
+
 struct ShadowData {
     glm::ivec4 counts{ 0 }; // x: directional, y: point, z: spot
-    std::pair<Texture2D, float> directional[MAX_DIRECTIONAL_LIGHT];
-    std::pair<Texture2D, float> spot[MAX_SPOT_LIGHT];
-    std::pair<TextureCubeMap, float> point[MAX_POINT_LIGHT];
+    ShadowMap2D directional[MAX_DIRECTIONAL_LIGHT];
+    ShadowMapCube point[MAX_POINT_LIGHT];
+    ShadowMap2D spot[MAX_SPOT_LIGHT];
     float point_far[MAX_POINT_LIGHT]{};
 
     static constexpr float kShadowMapSize = 2048.0f;
@@ -71,21 +86,42 @@ struct ShadowData {
 
         unsigned unit = first_unit;
         for (int i = 0; i < counts.x; ++i) {
-            directional[i].first.bind(unit);
+            directional[i].texture.bind(unit);
             shader.setInt(std::format("shadowMap.directional[{}]", i), static_cast<int>(unit));
-            shader.setFloat(std::format("shadowMap.directional_bias[{}]", i), directional[i].second);
+            shader.setFloat(
+                std::format("shadowMap.directional_min_bias[{}]", i),
+                directional[i].bias.min_bias
+            );
+            shader.setFloat(
+                std::format("shadowMap.directional_slope_bias[{}]", i),
+                directional[i].bias.slope_bias
+            );
             ++unit;
         }
         for (int i = 0; i < counts.z; ++i) {
-            spot[i].first.bind(unit);
+            spot[i].texture.bind(unit);
             shader.setInt(std::format("shadowMap.spot[{}]", i), static_cast<int>(unit));
-            shader.setFloat(std::format("shadowMap.spot_bias[{}]", i), spot[i].second);
+            shader.setFloat(
+                std::format("shadowMap.spot_min_bias[{}]", i),
+                spot[i].bias.min_bias
+            );
+            shader.setFloat(
+                std::format("shadowMap.spot_slope_bias[{}]", i),
+                spot[i].bias.slope_bias
+            );
             ++unit;
         }
         for (int i = 0; i < counts.y; ++i) {
-            point[i].first.bind(unit);
+            point[i].texture.bind(unit);
             shader.setInt(std::format("shadowMap.point_light[{}]", i), static_cast<int>(unit));
-            shader.setFloat(std::format("shadowMap.point_bias[{}]", i), point[i].second);
+            shader.setFloat(
+                std::format("shadowMap.point_min_bias[{}]", i),
+                point[i].bias.min_bias
+            );
+            shader.setFloat(
+                std::format("shadowMap.point_slope_bias[{}]", i),
+                point[i].bias.slope_bias
+            );
             shader.setFloat(std::format("shadowMap.point_far[{}]", i), point_far[i]);
             ++unit;
         }
