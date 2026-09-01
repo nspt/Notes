@@ -21,6 +21,24 @@
 // 场景几何 / 物体创建（业务）
 // ---------------------------------------------------------------------------
 
+namespace {
+
+std::vector<Model *> point_light_markers;
+
+constexpr float kPointLightMarkerScale = 0.2f;
+
+void syncPointLightMarkers(const LightData &lights)
+{
+    for (int i = 0; i < lights.counts.y && i < static_cast<int>(point_light_markers.size()); ++i) {
+        InstanceBuffer::InstanceData marker;
+        marker.translation_ = glm::vec3(lights.point[i].pos_);
+        marker.scale_ = glm::vec3{ kPointLightMarkerScale };
+        point_light_markers[i]->objects_[0].mesh_.setInstanceBuffer(InstanceBuffer{ marker });
+    }
+}
+
+} // namespace
+
 Mesh createQuadMesh(
     InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::InstanceData{} },
     bool include_inner_faces = true)
@@ -342,9 +360,23 @@ void createScene(Renderer &r, const std::string &resourceDir)
 
     RenderObject parallax_wall = normal_wall;
     parallax_wall.material_.height_ = Texture2D(resourceDir + "/textures/bricks2_disp.jpg", true, false);
-    parallax_wall.material_.height_scale_ = 0.1f;
+    parallax_wall.material_.height_scale_ = 0.05f;
     parallax_wall.mesh_.setInstanceBuffer(InstanceBuffer::InstanceData{ .translation_ = glm::vec3{ 2.2, 0, -0.5 } });
     r.objects().push_back(parallax_wall);
+
+    for (int i = 0; i < lights.counts.y; ++i) {
+        Material marker_mat;
+        marker_mat.pure_color_ = true;
+        marker_mat.color_ = glm::vec3{ 1.0f };
+        InstanceBuffer::InstanceData marker;
+        marker.translation_ = glm::vec3(lights.point[i].pos_);
+        marker.scale_ = glm::vec3{ kPointLightMarkerScale };
+        r.objects().push_back(RenderObject{
+            marker_mat, createCubeMesh(marker, false),
+            general, ShaderProgram{}, ShaderProgram{}
+        });
+        point_light_markers.push_back(&r.objects().back());
+    }
 
     // r.outlineObjects().push_back(createOutlineCubes(r, resourceDir));
     // r.objects().push_back(createPlatform(r, resourceDir));
@@ -425,19 +457,28 @@ void createScene(Renderer &r, const std::string &resourceDir)
     // }
 }
 
-// 演示用：点光源绕世界 Y 轴旋转（业务逻辑，不属于 Renderer）
-void rotatePointLightsAroundY(Renderer &r, float angle_rad,
-                              const glm::vec3 &pivot = glm::vec3{ 0.0f },
-                              const glm::vec3 &orbit_offset = glm::vec3{ 10.0f, 5.0f, 0.0f })
+void rotatePointLightsAroundAxis(Renderer &r, float angle_rad,
+                                 const glm::vec3 &axis = glm::vec3{ 1.0f, 1.0f, 0.0f },
+                                 const glm::vec3 &pivot = glm::vec3{ 0.0f },
+                                 const glm::vec3 &orbit_offset = glm::vec3{ 0.0f, 0.0f, 5.0f })
 {
     auto &lights = r.lights();
-    const glm::mat4 rot = glm::rotate(glm::mat4{ 1.0f }, angle_rad, glm::vec3{ 0.0f, 1.0f, 0.0f });
-    const glm::vec3 rotated_offset = glm::vec3(rot * glm::vec4{ orbit_offset, 0.0f });
+    const glm::vec3 n = glm::normalize(axis);
+
+    glm::vec3 helper = (std::abs(n.y) < 0.99f) ? glm::vec3{ 0.0f, 1.0f, 0.0f }
+                                               : glm::vec3{ 1.0f, 0.0f, 0.0f };
+    const glm::vec3 u = glm::normalize(glm::cross(helper, n));
+    const glm::vec3 v = glm::cross(n, u);
+    const glm::vec3 local_offset = u * orbit_offset.x + n * orbit_offset.y + v * orbit_offset.z;
+
+    const glm::mat4 rot = glm::rotate(glm::mat4{ 1.0f }, angle_rad, n);
+    const glm::vec3 rotated_offset = glm::vec3(rot * glm::vec4{ local_offset, 0.0f });
 
     for (int i = 0; i < lights.counts.y; ++i) {
         lights.point[i].pos_ = glm::vec4{ pivot + rotated_offset, 1.0f };
     }
     r.winData().lights_UBO.setSubData(0, sizeof(LightData), &lights);
+    syncPointLightMarkers(lights);
 }
 
 // ---------------------------------------------------------------------------
@@ -460,7 +501,7 @@ try {
     float point_light_angle = 0.0f;
     while (!renderer.shouldClose()) {
         point_light_angle += renderer.winData().delta_time.count() * 0.6f;
-        rotatePointLightsAroundY(renderer, point_light_angle);
+        rotatePointLightsAroundAxis(renderer, point_light_angle);
         renderer.renderFrame();
         renderer.endFrame();
         renderer.processInput();
