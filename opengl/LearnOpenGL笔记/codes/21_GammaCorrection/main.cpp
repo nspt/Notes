@@ -173,6 +173,18 @@ void printOpenGLInfo()
     std::cout << "OpenGL Vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "OpenGL Renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+
+    int srgb = 0;
+    glGetFramebufferAttachmentParameteriv(
+        GL_DRAW_FRAMEBUFFER,
+        GL_BACK,
+        GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING,
+        &srgb
+    );
+    if (srgb == GL_SRGB)
+        std::cout << "Default framebuffer is sRGB\n";
+    else if (srgb == GL_LINEAR)
+        std::cout << "Default framebuffer is linear\n";
 }
 
 void initGLFW(int major, int minor)
@@ -182,6 +194,7 @@ void initGLFW(int major, int minor)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_FALSE);
 }
 
 GLFWwindow* createWindow()
