@@ -109,8 +109,8 @@ float shadowCalculation(vec4 light_space_frag_pos, sampler2D depth_map, float bi
 
 float pointShadowCalculation(vec3 to_light_vec, samplerCube depth_map, float bias, float far_plane, float view_distance)
 {
-    vec3 frag_to_light = -to_light_vec;
-    float cur_depth = length(frag_to_light);
+    vec3 light_to_frag = -to_light_vec;
+    float cur_depth = length(light_to_frag);
     if (cur_depth > far_plane)
         return 0.0;
 
@@ -125,7 +125,7 @@ float pointShadowCalculation(vec3 to_light_vec, samplerCube depth_map, float bia
 
     float lit = 0.0;
     for (int i = 0; i < 20; ++i) {
-        float closest_depth = texture(depth_map, frag_to_light + sample_offsets[i] * disk_radius).r;
+        float closest_depth = texture(depth_map, light_to_frag + sample_offsets[i] * disk_radius).r;
         closest_depth *= far_plane;
         lit += cur_depth - bias > closest_depth ? 0.0 : 1.0;
     }
