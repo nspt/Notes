@@ -4,7 +4,11 @@
 
 ## Cache 变量
 
-由 `cmake -D` 定义，或在 CML 中由 `option(<variable> "<help_text>" [value])` 定义的变量，也可通过 `set(` 定义（语法见文档，有新旧两种）。
+由 `cmake -D` 定义，或在 CML 中由 `option(<variable> "<help_text>" [value])` 定义的变量，也可通过 `set()` 定义，`set()` 定义 Cache 变量有两种语法，具体见文档：
+
+- 旧：`set(<variable> <value>... CACHE <type> <docstring> [FORCE])`
+- 新：`set(CACHE{<variable>} [TYPE <type>] [HELP <helpstring>...] [FORCE] VALUE [<value>...])`
+
 
 Cache 变量具有粘性，*初始化*后其值会存在构建目录的 *CMakeCache.txt* 中，再次执行 `cmake -B` 不会改变其值，除非再次通过 `-D` 修改。
 
@@ -31,3 +35,5 @@ Cache 变量具有粘性，*初始化*后其值会存在构建目录的 *CMakeCa
   ]
 }
 ```
+
+调用 cmake 时，通过 `cmake --preset <file>` 来使用指定的预设配置。
