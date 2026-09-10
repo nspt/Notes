@@ -15,7 +15,7 @@ struct WindowState {
     int width{ 0 };
     int height{ 0 };
     float fov{ 45.0f };
-    float exposure{ 5.0f };
+    float exposure{ 1.0f };
     float gamma{ 2.2f };
     bool first_mouse{ true };
     double mouse_x{ 0.0 };
