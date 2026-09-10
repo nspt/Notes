@@ -124,12 +124,17 @@ vec2 parallaxOcclusionMapping(vec2 texCoords, vec3 viewDir)
 
     vec2 currentTexCoords = texCoords;
     float currentDepthMapValue = texture(material.height_map, currentTexCoords).r;
+    // float currentDepthMapValue = 1.0 - texture(material.height_map, currentTexCoords).r;
 
     for (float i = 0.0; i < numLayers; i += 1.0) {
         if (currentLayerDepth >= currentDepthMapValue)
-            break;
+           break;
         currentTexCoords -= deltaTexCoords;
         currentDepthMapValue = texture(material.height_map, currentTexCoords).r;
+        // if (currentLayerDepth >= currentDepthMapValue)
+        //     break;
+        // currentTexCoords += deltaTexCoords;
+        // currentDepthMapValue = 1.0 - texture(material.height_map, currentTexCoords).r;
         currentLayerDepth += layerDepth;
     }
 
@@ -138,6 +143,12 @@ vec2 parallaxOcclusionMapping(vec2 texCoords, vec3 viewDir)
     float beforeDepth = texture(material.height_map, prevTexCoords).r - currentLayerDepth + layerDepth;
     float weight = afterDepth / (afterDepth - beforeDepth + 1e-6);
     return mix(currentTexCoords, prevTexCoords, weight);
+
+    // vec2 prevTexCoords = currentTexCoords - deltaTexCoords;
+    // float afterDepth = currentDepthMapValue - currentLayerDepth;
+    // float beforeDepth = (1.0 - texture(material.height_map, prevTexCoords).r) - (currentLayerDepth - layerDepth);
+    // float weight = afterDepth / (afterDepth - beforeDepth + 1e-6);
+    // return mix(currentTexCoords, prevTexCoords, weight);
 }
 
 vec3 getFragNormalInWorld(mat3 tbn, vec2 texCoord)
