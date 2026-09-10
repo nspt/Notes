@@ -33,12 +33,11 @@ LightData createLightData()
     lights.directional[0].diffuse_ = glm::vec4{ 0.8f };
     lights.directional[0].specular_ = glm::vec4{ 1.0f };
 
-    lights.counts.y = 5;
     // 高亮白光在容器远端；其余彩色点光分布在它与原点之间，xy∈[-1,1]
     lights.point[0].pos_ = glm::vec4{ 0.0f, 0.0f, -9.8f, 1.0f };
     lights.point[0].ambient_ = glm::vec4{ 0.05f };
-    lights.point[0].diffuse_ = glm::vec4{ 550.0f };
-    lights.point[0].specular_ = glm::vec4{ 550.0f };
+    lights.point[0].diffuse_ = glm::vec4{ 100.0f };
+    lights.point[0].specular_ = glm::vec4{ 100.0f };
     lights.point[0].attenuation = glm::vec4{ 1.0f, 0.09f, 0.032f, 0.0f };
 
     const glm::vec4 attenuation{ 1.0f, 0.09f, 0.032f, 0.0f };
@@ -47,15 +46,17 @@ LightData createLightData()
         glm::vec3 color;
         float intensity;
     } colored_points[] = {
-        { {  0.8f, -0.6f, -2.0f }, { 1.0f, 0.2f, 0.1f }, 80.0f },  // 红
-        { { -0.7f,  0.9f, -4.0f }, { 0.1f, 1.0f, 0.2f }, 80.0f },  // 绿
-        { {  0.5f,  0.5f, -6.0f }, { 0.2f, 0.4f, 1.0f }, 80.0f },  // 蓝
-        { { -0.9f, -0.8f, -8.0f }, { 1.0f, 0.85f, 0.1f }, 80.0f }, // 黄
+        { {  0.6f, -0.5f,  -2.0f }, { 1.0f, 0.2f, 0.1f }, 10.0f },  // 红
+        { { -0.7f,  0.7f,  -4.5f }, { 0.1f, 1.0f, 0.2f }, 10.0f },  // 绿
+        { {  0.4f,  0.4f,  -7.0f }, { 0.2f, 0.4f, 1.0f }, 10.0f },  // 蓝
+        { { -0.5f, -0.6f,  -9.5f }, { 1.0f, 0.85f, 0.1f }, 10.0f }, // 黄
     };
-    for (int i = 0; i < 4; ++i) {
+    auto colored_points_count = sizeof(colored_points) / sizeof(colored_points[0]);
+    lights.counts.y = colored_points_count + 1;
+    for (int i = 0; i < colored_points_count; ++i) {
         const auto &p = colored_points[i];
         lights.point[i + 1].pos_ = glm::vec4{ p.pos, 1.0f };
-        lights.point[i + 1].ambient_ = glm::vec4{ 0.02f };
+        lights.point[i + 1].ambient_ = glm::vec4{ 0.0f };
         lights.point[i + 1].diffuse_ = glm::vec4{ p.color * p.intensity, 1.0f };
         lights.point[i + 1].specular_ = glm::vec4{ p.color * p.intensity, 1.0f };
         lights.point[i + 1].attenuation = attenuation;

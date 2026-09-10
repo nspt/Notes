@@ -20,11 +20,11 @@ class Renderer {
 public:
     using ShaderMap = std::map<std::string, ShaderProgram>;
     struct PostProcParams {
-        bool enable_kernel{ true };
+        bool enable_kernel{ false };
         float kernel[9]{
-            1.0 / 16, 2.0 / 16, 1.0 / 16,
-            2.0 / 16, 4.0 / 16, 2.0 / 16,
-            1.0 / 16, 2.0 / 16, 1.0 / 16  
+            0, 0, 0,
+            0, 1, 0,
+            0, 0, 0
         };
         float exposure{ 1.0 };
         float gamma{ 2.2 };
