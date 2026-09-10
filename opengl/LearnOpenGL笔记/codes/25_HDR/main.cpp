@@ -27,18 +27,39 @@ constexpr float kSpotLightMarkerScale = 0.3f;
 LightData createLightData()
 {
     LightData lights;
-    lights.counts.x = 0;
-    lights.directional[0].direction_ = glm::normalize(glm::vec4{ -1.0f, -1.0f, -1.0f, 0.0f });
+    lights.counts.x = 1;
+    lights.directional[0].direction_ = glm::normalize(glm::vec4{ 0.0f, -1.0f, 0.0f, 0.0f });
     lights.directional[0].ambient_ = glm::vec4{ 0.05f };
     lights.directional[0].diffuse_ = glm::vec4{ 0.8f };
     lights.directional[0].specular_ = glm::vec4{ 1.0f };
 
-    lights.counts.y = 1;
-    lights.point[0].pos_ = glm::vec4{ -9.0f, 0.0f, 0.0f, 1.0f };
+    lights.counts.y = 5;
+    // 高亮白光在容器远端；其余彩色点光分布在它与原点之间，xy∈[-1,1]
+    lights.point[0].pos_ = glm::vec4{ 0.0f, 0.0f, -9.8f, 1.0f };
     lights.point[0].ambient_ = glm::vec4{ 0.05f };
-    lights.point[0].diffuse_ = glm::vec4{ 10.0f, 5.f, 0.f, 0.f };
-    lights.point[0].specular_ = glm::vec4{ 10.0f, 5.f, 0.f, 0.f };
+    lights.point[0].diffuse_ = glm::vec4{ 550.0f };
+    lights.point[0].specular_ = glm::vec4{ 550.0f };
     lights.point[0].attenuation = glm::vec4{ 1.0f, 0.09f, 0.032f, 0.0f };
+
+    const glm::vec4 attenuation{ 1.0f, 0.09f, 0.032f, 0.0f };
+    const struct {
+        glm::vec3 pos;
+        glm::vec3 color;
+        float intensity;
+    } colored_points[] = {
+        { {  0.8f, -0.6f, -2.0f }, { 1.0f, 0.2f, 0.1f }, 80.0f },  // 红
+        { { -0.7f,  0.9f, -4.0f }, { 0.1f, 1.0f, 0.2f }, 80.0f },  // 绿
+        { {  0.5f,  0.5f, -6.0f }, { 0.2f, 0.4f, 1.0f }, 80.0f },  // 蓝
+        { { -0.9f, -0.8f, -8.0f }, { 1.0f, 0.85f, 0.1f }, 80.0f }, // 黄
+    };
+    for (int i = 0; i < 4; ++i) {
+        const auto &p = colored_points[i];
+        lights.point[i + 1].pos_ = glm::vec4{ p.pos, 1.0f };
+        lights.point[i + 1].ambient_ = glm::vec4{ 0.02f };
+        lights.point[i + 1].diffuse_ = glm::vec4{ p.color * p.intensity, 1.0f };
+        lights.point[i + 1].specular_ = glm::vec4{ p.color * p.intensity, 1.0f };
+        lights.point[i + 1].attenuation = attenuation;
+    }
     return lights;
 }
 
@@ -119,7 +140,7 @@ Scene createScene(Renderer &renderer, const std::string &resourceDir)
 
     scene.data_->models_.push_back(createContainerCube(renderer, resourceDir));
     scene.data_->models_.back().setInstances(InstanceBuffer::InstanceData{
-        .scale_ = glm::vec3{ 10.0f }
+        .scale_ = glm::vec3{ 1.0f, 1.f, 10.0f }
     });
 
     auto markers = createLightMarkers(renderer, scene, resourceDir);
@@ -129,6 +150,27 @@ Scene createScene(Renderer &renderer, const std::string &resourceDir)
         std::make_move_iterator(markers.end())
     );
     return scene;
+}
+
+void syncRendererFromWindow(Renderer &renderer, const WindowState &win)
+{
+    renderer.setCameraData(win.camera.cameraData());
+    renderer.setViewport(0, 0, win.width, win.height);
+    auto params = renderer.postProcParams();
+    params.exposure = win.exposure;
+    params.gamma = win.gamma;
+    renderer.setPostProcParams(params);
+}
+
+Renderer createRenderer(const std::string &resourceDir, const WindowState &win)
+{
+    Renderer renderer;
+    renderer.setShaders(loadShaders(resourceDir, "25_hdr"));
+    renderer.setPostProcShader(renderer.shader("quad"));
+    renderer.setBlurShader(renderer.shader("blur"));
+    renderer.setCompositeShader(renderer.shader("composite"));
+    syncRendererFromWindow(renderer, win);
+    return renderer;
 }
 
 } // namespace
@@ -146,11 +188,7 @@ try {
     // 必须先于 Renderer 构造：Renderer 创建 GL 资源需要 context
     GLFWWin window{ window_width, window_height, "HDR", win };
 
-    Renderer renderer;
-    renderer.setShaders(loadShaders(resourceDir, "25_hdr"));
-    renderer.setPostProcShader(renderer.shader("quad"));
-    renderer.setBlurShader(renderer.shader("blur"));
-    renderer.setCompositeShader(renderer.shader("composite"));
+    Renderer renderer = createRenderer(resourceDir, win);
 
     Scene scene = createScene(renderer, resourceDir);
     renderer.setScene(scene);
@@ -158,14 +196,7 @@ try {
     while (!window.shouldClose()) {
         window.beginFrame(scene);
 
-        window.updateCameraData();
-        renderer.setCameraData(win.camera.cameraData());
-        renderer.setViewport(0, 0, win.width, win.height);
-        {
-            auto params = renderer.postProcParams();
-            params.exposure = win.exposure;
-            renderer.setPostProcParams(params);
-        }
+        syncRendererFromWindow(renderer, win);
         renderer.render();
 
         window.endFrame(scene);

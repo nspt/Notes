@@ -46,6 +46,7 @@ GLFWWin::GLFWWin(int width, int height, const char *title, WindowState &state)
     glfwSetFramebufferSizeCallback(window_, framebufferSizeCallback);
     glfwSetScrollCallback(window_, scrollCallback);
 
+    updateCameraProjection(state_);
     ++ref_count_;
 }
 
@@ -126,16 +127,6 @@ void GLFWWin::endFrame(Scene &scene)
     glfwPollEvents();
 }
 
-void GLFWWin::updateCameraData()
-{
-    state_.camera.setProjection(glm::perspective(
-        glm::radians(state_.fov),
-        static_cast<float>(state_.width) / static_cast<float>(std::max(state_.height, 1)),
-        0.1f,
-        100000.0f
-    ));
-}
-
 GLFWWin::ActionId GLFWWin::addAction(ActionMap &actions, FrameAction action)
 {
     const ActionId id = next_action_id_++;
@@ -204,6 +195,21 @@ void GLFWWin::processInput(std::chrono::duration<float> delta_time)
         std::cout << "exposure: " << state_.exposure << '\n';
     }
 
+    const float gamma_step = 1.0f * delta_time.count();
+    bool gamma_changed = false;
+    if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        const float prev = state_.gamma;
+        state_.gamma = std::max(0.1f, state_.gamma - gamma_step);
+        gamma_changed = state_.gamma != prev;
+    }
+    if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS) {
+        state_.gamma += gamma_step;
+        gamma_changed = true;
+    }
+    if (gamma_changed) {
+        std::cout << "gamma: " << state_.gamma << '\n';
+    }
+
     double x = 0.0, y = 0.0;
     glfwGetCursorPos(window_, &x, &y);
     if (state_.first_mouse) {
@@ -224,16 +230,28 @@ void GLFWWin::processInput(std::chrono::duration<float> delta_time)
     }
 }
 
+void GLFWWin::updateCameraProjection(WindowState &state)
+{
+    state.camera.setProjection(glm::perspective(
+        glm::radians(state.fov),
+        static_cast<float>(state.width) / static_cast<float>(std::max(state.height, 1)),
+        0.1f,
+        100000.0f
+    ));
+}
+
 void GLFWWin::framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     auto *win = static_cast<WindowState *>(glfwGetWindowUserPointer(window));
     win->width = width;
     win->height = height;
     glViewport(0, 0, width, height);
+    updateCameraProjection(*win);
 }
 
 void GLFWWin::scrollCallback(GLFWwindow *window, double, double yoffset)
 {
     auto *win = static_cast<WindowState *>(glfwGetWindowUserPointer(window));
     win->fov = glm::clamp(win->fov - static_cast<float>(yoffset), 1.0f, 45.0f);
+    updateCameraProjection(*win);
 }

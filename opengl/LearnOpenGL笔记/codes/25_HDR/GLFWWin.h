@@ -15,7 +15,8 @@ struct WindowState {
     int width{ 0 };
     int height{ 0 };
     float fov{ 45.0f };
-    float exposure{ 1.0f };
+    float exposure{ 5.0f };
+    float gamma{ 2.2f };
     bool first_mouse{ true };
     double mouse_x{ 0.0 };
     double mouse_y{ 0.0 };
@@ -48,7 +49,6 @@ public:
 
     void beginFrame(Scene &scene);
     void endFrame(Scene &scene);
-    void updateCameraData();
 
 private:
     using ActionMap = std::map<ActionId, FrameAction>;
@@ -58,6 +58,7 @@ private:
                            std::chrono::steady_clock::time_point start_tp,
                            std::chrono::duration<float> delta_time);
     void processInput(std::chrono::duration<float> delta_time);
+    static void updateCameraProjection(WindowState &state);
 
     static void framebufferSizeCallback(GLFWwindow *window, int width, int height);
     static void scrollCallback(GLFWwindow *window, double xoffset, double yoffset);

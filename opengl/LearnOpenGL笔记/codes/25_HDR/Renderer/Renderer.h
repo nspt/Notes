@@ -20,11 +20,11 @@ class Renderer {
 public:
     using ShaderMap = std::map<std::string, ShaderProgram>;
     struct PostProcParams {
-        bool enable_kernel{ false };
+        bool enable_kernel{ true };
         float kernel[9]{
-            0, 0, 0,
-            0, 1, 0,
-            0, 0, 0
+            1.0 / 16, 2.0 / 16, 1.0 / 16,
+            2.0 / 16, 4.0 / 16, 2.0 / 16,
+            1.0 / 16, 2.0 / 16, 1.0 / 16  
         };
         float exposure{ 1.0 };
         float gamma{ 2.2 };
@@ -121,7 +121,7 @@ private:
     static ShaderMap shaders_;
     static constexpr GLsizei hdr_samples_ = 4;
     static constexpr int bloom_blur_iterations_ = 5;
-    float bloom_threshold_{ 2.2f };
+    float bloom_threshold_{ 1.0f };
     bool hdr_enabled_{ true };
     bool bloom_enabled_{ true };
 };
