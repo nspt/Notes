@@ -1,15 +1,15 @@
-#version 330 core
+﻿#version 330 core
 
 in GS_OUT {
-    vec3 v_world_pos;
-    vec3 v_world_normal;
-    vec2 v_tex_coord;
-    vec3 v_world_tangent;
-    vec3 v_view_vec;
-    vec3 v_to_point_light[8];
-    vec3 v_to_spot_light[4];
-    vec4 v_directional_light_space_pos[2];
-    vec4 v_spot_light_space_pos[4];
+    vec3 v_ws_pos;
+    vec3 v_ws_normal;
+    vec2 v_uv_coord;
+    vec3 v_ws_tangent;
+    vec3 v_ws_to_camera;
+    vec3 v_ws_to_point_light[8];
+    vec3 v_ws_to_spot_light[4];
+    vec4 v_dls_pos[2]; // directional light space
+    vec4 v_sls_pos[4]; // spot light space
 } fs_in;
 
 #include "common/cam_data.glsl"

@@ -1,6 +1,6 @@
-#version 330 core
+﻿#version 330 core
 
-in vec2 v_tex_coord;
+in vec2 v_uv_coord;
 in vec3 v_frag_pos;
 
 #include "common/material.glsl"
@@ -11,7 +11,7 @@ uniform float far_plane;
 void main()
 {
     if (!material.pure_color && material.diffuse_exist) {
-        vec4 diffuse = texture(material.diffuse_texture, v_tex_coord);
+        vec4 diffuse = texture(material.diffuse_texture, v_uv_coord);
         if (diffuse.a < 0.01)
             discard;
     }

@@ -1,4 +1,4 @@
-#version 330 core
+﻿#version 330 core
 
 layout (triangles) in;
 layout (triangle_strip, max_vertices=18) out;
@@ -6,10 +6,10 @@ layout (triangle_strip, max_vertices=18) out;
 uniform mat4 light_space_transform[6];
 
 in VS_OUT {
-    vec2 v_tex_coord;
+    vec2 v_uv_coord;
 } gs_in[];
 
-out vec2 v_tex_coord;
+out vec2 v_uv_coord;
 out vec3 v_frag_pos;
 
 void main()
@@ -21,7 +21,7 @@ void main()
         {
             v_frag_pos = gl_in[i].gl_Position.xyz;
             gl_Position = light_space_transform[face] * gl_in[i].gl_Position;
-            v_tex_coord = gs_in[i].v_tex_coord;
+            v_uv_coord = gs_in[i].v_uv_coord;
             EmitVertex();
         }    
         EndPrimitive();

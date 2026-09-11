@@ -1,6 +1,6 @@
-#version 330 core
+﻿#version 330 core
 
-in vec2 v_tex_coord;
+in vec2 v_uv_coord;
 
 out vec4 out_color;
 
@@ -14,19 +14,19 @@ const float weight[5] = float[](
 
 void main()
 {
-    vec3 result = texture(image, v_tex_coord).rgb * weight[0];
+    vec3 result = texture(image, v_uv_coord).rgb * weight[0];
 
     if (horizontal) {
         for (int i = 1; i < 5; ++i) {
             vec2 offset = vec2(tex_offset.x * float(i), 0.0);
-            result += texture(image, v_tex_coord + offset).rgb * weight[i];
-            result += texture(image, v_tex_coord - offset).rgb * weight[i];
+            result += texture(image, v_uv_coord + offset).rgb * weight[i];
+            result += texture(image, v_uv_coord - offset).rgb * weight[i];
         }
     } else {
         for (int i = 1; i < 5; ++i) {
             vec2 offset = vec2(0.0, tex_offset.y * float(i));
-            result += texture(image, v_tex_coord + offset).rgb * weight[i];
-            result += texture(image, v_tex_coord - offset).rgb * weight[i];
+            result += texture(image, v_uv_coord + offset).rgb * weight[i];
+            result += texture(image, v_uv_coord - offset).rgb * weight[i];
         }
     }
 

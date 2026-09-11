@@ -1,6 +1,6 @@
-#version 330 core
+﻿#version 330 core
 
-in vec2 v_tex_coord;
+in vec2 v_uv_coord;
 
 out vec4 out_color;
 
@@ -29,7 +29,7 @@ vec3 sampleMapped(vec2 uv)
 vec3 sampleColor()
 {
     if (!enable_kernel) {
-        return sampleMapped(v_tex_coord);
+        return sampleMapped(v_uv_coord);
     }
 
     // 先 tone map 再卷积：拉普拉斯在 HDR 上卷积后接近 0，再映射会几乎全黑
@@ -47,7 +47,7 @@ vec3 sampleColor()
 
     vec3 color = vec3(0.0);
     for (int i = 0; i < 9; ++i) {
-        color += sampleMapped(v_tex_coord + offsets[i] * tex_offset) * kernel[i];
+        color += sampleMapped(v_uv_coord + offsets[i] * tex_offset) * kernel[i];
     }
     return color;
 }

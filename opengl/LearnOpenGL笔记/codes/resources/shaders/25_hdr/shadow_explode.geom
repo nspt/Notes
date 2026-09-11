@@ -1,13 +1,13 @@
-#version 330 core
+﻿#version 330 core
 
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
 in VS_OUT {
-    vec2 v_tex_coord;
+    vec2 v_uv_coord;
 } gs_in[];
 
-out vec2 v_tex_coord;
+out vec2 v_uv_coord;
 
 uniform mat4 light_space_transform;
 uniform float explode_magnitude;
@@ -30,7 +30,7 @@ void main()
     for (int i = 0; i < 3; ++i) {
         vec4 world_pos = explode(gl_in[i].gl_Position, normal);
         gl_Position = light_space_transform * world_pos;
-        v_tex_coord = gs_in[i].v_tex_coord;
+        v_uv_coord = gs_in[i].v_uv_coord;
         EmitVertex();
     }
     EndPrimitive();

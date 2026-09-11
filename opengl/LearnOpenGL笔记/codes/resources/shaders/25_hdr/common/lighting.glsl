@@ -1,4 +1,4 @@
-layout (location = 0) out vec4 out_color;
+﻿layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright;
 
 uniform float bloom_threshold;
@@ -12,46 +12,46 @@ mat3 getTBNMatrix(vec3 tangent, vec3 normal)
     return mat3(T, B, N);
 }
 
-vec3 getViewDirTangent(mat3 tbn, vec3 view_vec)
+vec3 getToCameraTangent(mat3 tbn, vec3 to_camera)
 {
     return normalize(vec3(
-        dot(tbn[0], view_vec),
-        dot(tbn[1], view_vec),
-        dot(tbn[2], view_vec)
+        dot(tbn[0], to_camera),
+        dot(tbn[1], to_camera),
+        dot(tbn[2], to_camera)
     ));
 }
 
-vec2 parallaxOcclusionMapping(vec2 texCoords, vec3 viewDir)
+vec2 parallaxOcclusionMapping(vec2 uv, vec3 to_camera)
 {
     const float minLayers = 8.0;
     const float maxLayers = 32.0;
-    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), to_camera)));
     float layerDepth = 1.0 / numLayers;
     float currentLayerDepth = 0.0;
-    vec2 P = viewDir.xy * material.height_scale / viewDir.z;
-    vec2 deltaTexCoords = P / numLayers;
+    vec2 P = to_camera.xy * material.height_scale / to_camera.z;
+    vec2 deltaUv = P / numLayers;
 
-    vec2 currentTexCoords = texCoords;
-    float currentDepthMapValue = texture(material.height_map, currentTexCoords).r;
+    vec2 currentUv = uv;
+    float currentDepthMapValue = texture(material.height_map, currentUv).r;
 
     for (float i = 0.0; i < numLayers; i += 1.0) {
         if (currentLayerDepth >= currentDepthMapValue)
             break;
-        currentTexCoords -= deltaTexCoords;
-        currentDepthMapValue = texture(material.height_map, currentTexCoords).r;
+        currentUv -= deltaUv;
+        currentDepthMapValue = texture(material.height_map, currentUv).r;
         currentLayerDepth += layerDepth;
     }
 
-    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+    vec2 prevUv = currentUv + deltaUv;
     float afterDepth = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = texture(material.height_map, prevTexCoords).r - currentLayerDepth + layerDepth;
+    float beforeDepth = texture(material.height_map, prevUv).r - currentLayerDepth + layerDepth;
     float weight = afterDepth / (afterDepth - beforeDepth + 1e-6);
-    return mix(currentTexCoords, prevTexCoords, weight);
+    return mix(currentUv, prevUv, weight);
 }
 
-vec3 getFragNormalInWorld(mat3 tbn, vec2 texCoord)
+vec3 getFragNormalInWorld(mat3 tbn, vec2 uv)
 {
-    vec3 tangent_normal = texture(material.normal_map, texCoord).xyz * 2.0 - 1.0;
+    vec3 tangent_normal = texture(material.normal_map, uv).xyz * 2.0 - 1.0;
     return normalize(tbn * tangent_normal);
 }
 
@@ -78,7 +78,7 @@ float dirShadowLitFactor(vec4 light_space_frag_pos, sampler2D depth_map,
 }
 
 float omniShadowLitFactor(vec3 to_light_vec, samplerCube depth_map,
-                          float bias, float far_plane, float view_distance)
+                          float bias, float far_plane, float to_camera_distance)
 {
     vec3 light_to_frag = -to_light_vec;
     float cur_depth = length(light_to_frag);
@@ -92,7 +92,7 @@ float omniShadowLitFactor(vec3 to_light_vec, samplerCube depth_map,
         vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
         vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
     );
-    float disk_radius = (1.0 + (view_distance / far_plane)) / 25.0;
+    float disk_radius = (1.0 + (to_camera_distance / far_plane)) / 25.0;
 
     float lit = 0.0;
     for (int i = 0; i < 20; ++i) {
@@ -111,7 +111,7 @@ vec3 calcDirectionalLights(vec3 normal, vec3 to_camera, vec3 ambient, vec3 diffu
         float bias = dot(normal, light_dir) * shadowMap.directional[i].bias.slope_bias
                    + shadowMap.directional[i].bias.min_bias;
         float lit = (i < shadowMap.counts.x)
-            ? dirShadowLitFactor(fs_in.v_directional_light_space_pos[i],
+            ? dirShadowLitFactor(fs_in.v_dls_pos[i],
                                  shadowMap.directional[i].map,
                                  shadowMap.directional[i].texel_size, bias)
             : 1.0;
@@ -125,12 +125,12 @@ vec3 calcDirectionalLights(vec3 normal, vec3 to_camera, vec3 ambient, vec3 diffu
     return result;
 }
 
-vec3 calcPointLights(vec3 normal, vec3 to_camera, float view_distance,
+vec3 calcPointLights(vec3 normal, vec3 to_camera, float to_camera_distance,
                      vec3 ambient, vec3 diffuse, vec3 specular)
 {
     vec3 result = vec3(0.0);
     for (int i = 0; i < lightData.counts.y; ++i) {
-        vec3 to_light_vec = fs_in.v_to_point_light[i];
+        vec3 to_light_vec = fs_in.v_ws_to_point_light[i];
         float distance = length(to_light_vec);
         vec3 to_light = to_light_vec / distance;
         vec3 light_dir = -to_light;
@@ -144,7 +144,7 @@ vec3 calcPointLights(vec3 normal, vec3 to_camera, float view_distance,
             + lightData.point[i].attenuation.z * (distance * distance));
         float lit = (i < shadowMap.counts.y)
             ? omniShadowLitFactor(to_light_vec, shadowMap.point[i].map, bias,
-                                  shadowMap.point[i].far_plane, view_distance)
+                                  shadowMap.point[i].far_plane, to_camera_distance)
             : 1.0;
         vec3 contrib = lightData.point[i].ambient.xyz * ambient
                      + lightData.point[i].diffuse.xyz * diff * diffuse * lit
@@ -158,7 +158,7 @@ vec3 calcSpotLights(vec3 normal, vec3 to_camera, vec3 ambient, vec3 diffuse, vec
 {
     vec3 result = vec3(0.0);
     for (int i = 0; i < lightData.counts.z; ++i) {
-        vec3 to_light_vec = fs_in.v_to_spot_light[i];
+        vec3 to_light_vec = fs_in.v_ws_to_spot_light[i];
         float distance = length(to_light_vec);
         vec3 to_light = to_light_vec / distance;
         vec3 light_dir = lightData.spot[i].direction.xyz;
@@ -177,7 +177,7 @@ vec3 calcSpotLights(vec3 normal, vec3 to_camera, vec3 ambient, vec3 diffuse, vec
             ? clamp((theta - outer_cutoff) * inv_epsilon, 0.0, 1.0)
             : (theta > outer_cutoff ? 1.0 : 0.0);
         float lit = (i < shadowMap.counts.z)
-            ? dirShadowLitFactor(fs_in.v_spot_light_space_pos[i],
+            ? dirShadowLitFactor(fs_in.v_sls_pos[i],
                                  shadowMap.spot[i].map,
                                  shadowMap.spot[i].texel_size, bias)
             : 1.0;
@@ -191,20 +191,20 @@ vec3 calcSpotLights(vec3 normal, vec3 to_camera, vec3 ambient, vec3 diffuse, vec
 
 vec4 shadeFragment()
 {
-    vec3 normal = normalize(fs_in.v_world_normal);
-    vec2 texCoord = fs_in.v_tex_coord;
-    vec3 to_camera = normalize(fs_in.v_view_vec);
-    float view_distance = length(fs_in.v_view_vec);
+    vec3 normal = normalize(fs_in.v_ws_normal);
+    vec2 uv = fs_in.v_uv_coord;
+    vec3 to_camera = normalize(fs_in.v_ws_to_camera);
+    float to_camera_distance = length(fs_in.v_ws_to_camera);
 
     if (material.height_exist || material.normal_exist) {
-        mat3 tbn = getTBNMatrix(fs_in.v_world_tangent, fs_in.v_world_normal);
+        mat3 tbn = getTBNMatrix(fs_in.v_ws_tangent, fs_in.v_ws_normal);
         if (material.height_exist) {
-            texCoord = parallaxOcclusionMapping(texCoord, getViewDirTangent(tbn, fs_in.v_view_vec));
-            if (texCoord.x > 1.0 || texCoord.y > 1.0 || texCoord.x < 0.0 || texCoord.y < 0.0)
+            uv = parallaxOcclusionMapping(uv, getToCameraTangent(tbn, fs_in.v_ws_to_camera));
+            if (uv.x > 1.0 || uv.y > 1.0 || uv.x < 0.0 || uv.y < 0.0)
                 discard;
         }
         if (material.normal_exist) {
-            normal = getFragNormalInWorld(tbn, texCoord);
+            normal = getFragNormalInWorld(tbn, uv);
         }
     }
 
@@ -219,11 +219,11 @@ vec4 shadeFragment()
     vec4 env_refract = vec4(0.0);
 
     if (material.diffuse_exist) {
-        ambient = texture(material.diffuse_texture, texCoord);
+        ambient = texture(material.diffuse_texture, uv);
         diffuse = ambient;
     }
     if (material.specular_exist) {
-        specular = texture(material.specular_texture, texCoord);
+        specular = texture(material.specular_texture, uv);
     }
     if (diffuse.a < 0.01 && specular.a < 0.01)
         discard;
@@ -237,7 +237,7 @@ vec4 shadeFragment()
     }
 
     vec3 lit = calcDirectionalLights(normal, to_camera, ambient.rgb, diffuse.rgb, specular.rgb)
-             + calcPointLights(normal, to_camera, view_distance, ambient.rgb, diffuse.rgb, specular.rgb)
+             + calcPointLights(normal, to_camera, to_camera_distance, ambient.rgb, diffuse.rgb, specular.rgb)
              + calcSpotLights(normal, to_camera, ambient.rgb, diffuse.rgb, specular.rgb);
     return vec4(lit + env_reflect.rgb + env_refract.rgb, diffuse.a);
 }
