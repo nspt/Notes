@@ -8,11 +8,9 @@ out vec3 v_tex_coord;
 
 #include "common/cam_data.glsl"
 
-uniform mat4 no_translate_view;
-
 void main()
 {
-    vec4 p = cam_data.projection * no_translate_view * a_model * vec4(a_pos, 1.0);
+    vec4 p = cam_data.projection * mat4(mat3(cam_data.view)) * vec4(a_pos, 1.0);
     gl_Position = p.xyww;
     v_tex_coord = a_pos;
 }

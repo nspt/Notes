@@ -32,6 +32,7 @@ void PipelineState::apply() const
     setCapability(GL_STENCIL_TEST, stencil_test_);
     setCapability(GL_CULL_FACE, cull_face_);
 
+    glDepthMask(depth_write_ ? GL_TRUE : GL_FALSE);
     glDepthFunc(depth_func_);
     glCullFace(cull_face_mode_);
 

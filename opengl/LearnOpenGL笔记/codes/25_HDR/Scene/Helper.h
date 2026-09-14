@@ -21,11 +21,9 @@
 #include "../Model/Mesh.h"
 #include "../Model/Model.h"
 #include "../Model/RenderObject.h"
-#include "Light.h"
 #include "../Renderer/PipelineState.h"
 #include "../Renderer/Renderer.h"
 #include "../Renderer/ShaderProgram.h"
-#include "Scene.h"
 #include "../Textures/Texture2D.h"
 #include "../Textures/TextureCubeMap.h"
 
@@ -286,6 +284,34 @@ inline Model createContainerCube(Renderer &r, const std::string &resourceDir)
         material, createCubeMesh(),
         r.shader("lit"), r.shader("shadow"), r.shader("cube_shadow")
     } };
+}
+
+inline Model createDefaultSkybox(Renderer &r, const std::string &resourceDir)
+{
+    Material material;
+    material.skybox_ = TextureCubeMap{
+        {
+            resourceDir + "/textures/skybox/right.jpg",
+            resourceDir + "/textures/skybox/left.jpg",
+            resourceDir + "/textures/skybox/top.jpg",
+            resourceDir + "/textures/skybox/bottom.jpg",
+            resourceDir + "/textures/skybox/front.jpg",
+            resourceDir + "/textures/skybox/back.jpg",
+        },
+        false
+    };
+
+    RenderObject skybox{
+        material,
+        createCubeMesh(InstanceBuffer{ InstanceBuffer::InstanceData{} }, false),
+        r.shader("skybox")
+    };
+    // 相机在立方体内部，看的是外侧面的背面 → 剔正面
+    skybox.pipeline_state_.cull_face_ = true;
+    skybox.pipeline_state_.cull_face_mode_ = GL_FRONT;
+    skybox.pipeline_state_.depth_func_ = GL_LEQUAL;
+    skybox.pipeline_state_.depth_write_ = false;
+    return Model{ std::move(skybox) };
 }
 
 inline Model createOutlineModel(Model &model, GLint stencil_ref = 1,

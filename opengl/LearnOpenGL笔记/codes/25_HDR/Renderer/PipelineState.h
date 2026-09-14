@@ -5,6 +5,7 @@
 class PipelineState {
 public:
     bool depth_test_{ true };
+    bool depth_write_{ true };
     bool blend_{ false };
     bool stencil_test_{ false };
     bool cull_face_{ true };

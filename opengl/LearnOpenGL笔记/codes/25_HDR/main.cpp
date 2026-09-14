@@ -149,6 +149,8 @@ Scene createScene(Renderer &renderer, const std::string &resourceDir)
         std::make_move_iterator(markers.begin()),
         std::make_move_iterator(markers.end())
     );
+
+    scene.data_->models_.push_back(createDefaultSkybox(renderer, resourceDir));
     return scene;
 }
 
