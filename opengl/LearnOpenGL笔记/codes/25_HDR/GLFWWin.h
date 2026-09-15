@@ -17,11 +17,13 @@ struct WindowState {
     float fov{ 45.0f };
     float exposure{ 1.0f };
     float gamma{ 2.2f };
+    // 0 Identity / 1 Blur / 2 EdgeDetect / 3 Sharpen
+    int post_kernel{ 0 };
     bool first_mouse{ true };
     double mouse_x{ 0.0 };
     double mouse_y{ 0.0 };
     float move_speed{ 5.0f };
-    float rotate_sensitivity{ 0.05f };
+    float rotate_sensitivity{ 0.1f };
 };
 
 class GLFWWin {
@@ -70,6 +72,9 @@ private:
     ActionMap begin_actions_;
     ActionMap end_actions_;
     ActionId next_action_id_{ 0 };
+    bool left_arrow_held_{ false };
+    bool right_arrow_held_{ false };
+    bool right_mouse_held_{ false };
 
     static int ref_count_; // 已成功构造的 GLFWWin 数量
 };

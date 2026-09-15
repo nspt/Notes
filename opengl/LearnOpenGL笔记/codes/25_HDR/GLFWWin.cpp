@@ -42,7 +42,7 @@ GLFWWin::GLFWWin(int width, int height, const char *title, WindowState &state)
     state_.width = width;
     state_.height = height;
     glfwSetWindowUserPointer(window_, &state_);
-    glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetFramebufferSizeCallback(window_, framebufferSizeCallback);
     glfwSetScrollCallback(window_, scrollCallback);
 
@@ -210,8 +210,42 @@ void GLFWWin::processInput(std::chrono::duration<float> delta_time)
         std::cout << "gamma: " << state_.gamma << '\n';
     }
 
+    constexpr int kPostKernelCount = 4;
+    constexpr const char *kPostKernelNames[kPostKernelCount] = {
+        "Identity", "Blur", "EdgeDetect", "Sharpen"
+    };
+    const bool left_down = glfwGetKey(window_, GLFW_KEY_LEFT) == GLFW_PRESS;
+    const bool right_down = glfwGetKey(window_, GLFW_KEY_RIGHT) == GLFW_PRESS;
+    int kernel_delta = 0;
+    if (left_down && !left_arrow_held_) {
+        kernel_delta = -1;
+    }
+    if (right_down && !right_arrow_held_) {
+        kernel_delta = 1;
+    }
+    left_arrow_held_ = left_down;
+    right_arrow_held_ = right_down;
+    if (kernel_delta != 0) {
+        state_.post_kernel =
+            (state_.post_kernel + kernel_delta + kPostKernelCount) % kPostKernelCount;
+        std::cout << "post kernel: " << kPostKernelNames[state_.post_kernel]
+                  << (state_.post_kernel == 0 ? " (post effect off)" : "") << '\n';
+    }
+
     double x = 0.0, y = 0.0;
     glfwGetCursorPos(window_, &x, &y);
+
+    const bool right_mouse_down =
+        glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+    if (right_mouse_down && !right_mouse_held_) {
+        // 刚按下：捕获鼠标，忽略本帧位移，避免视角跳变
+        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        state_.first_mouse = true;
+    } else if (!right_mouse_down && right_mouse_held_) {
+        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+    right_mouse_held_ = right_mouse_down;
+
     if (state_.first_mouse) {
         state_.first_mouse = false;
         state_.mouse_x = x;
@@ -221,12 +255,14 @@ void GLFWWin::processInput(std::chrono::duration<float> delta_time)
             && glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
             camera.move(glm::vec3{ 0.0f, -1.0f, 0.0f } * distance);
         }
-        auto delta_x = x - state_.mouse_x;
-        auto delta_y = y - state_.mouse_y;
+        const auto delta_x = x - state_.mouse_x;
+        const auto delta_y = y - state_.mouse_y;
         state_.mouse_x = x;
         state_.mouse_y = y;
-        camera.yaw(-state_.rotate_sensitivity * delta_x);
-        camera.pitch(-state_.rotate_sensitivity * delta_y);
+        if (right_mouse_down) {
+            camera.yaw(-state_.rotate_sensitivity * delta_x);
+            camera.pitch(-state_.rotate_sensitivity * delta_y);
+        }
     }
 }
 

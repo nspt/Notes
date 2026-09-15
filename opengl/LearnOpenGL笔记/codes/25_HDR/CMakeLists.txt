@@ -6,10 +6,8 @@ target_sources(hdr
         main.cpp
         GLFWWin.h GLFWWin.cpp
         Scene/Scene.h
-        Scene/Helper.h
         Scene/Camera.h Scene/Camera.cpp
         Scene/Light.h
-        Scene/Shadow.h
 
         Buffers/Buffer.h Buffers/Buffer.cpp
         Buffers/VertexBuffer.h Buffers/VertexBuffer.cpp
@@ -21,10 +19,14 @@ target_sources(hdr
         FrameBuffer/RenderBuffer.h FrameBuffer/RenderBuffer.cpp
         FrameBuffer/RenderBufferMS.h FrameBuffer/RenderBufferMS.cpp
 
-        Model/Material.h
+        Model/Material.h Model/Material.cpp
         Model/Mesh.h Model/Mesh.cpp
         Model/Model.h Model/Model.cpp
-        Model/RenderObject.h
+        Model/DrawRequest.h
+        Model/DrawableObject.h
+        Model/Helper.h
+        Model/Skybox.h Model/Skybox.cpp
+        Model/ScreenQuad.h Model/ScreenQuad.cpp
 
         Renderer/Renderer.h Renderer/Renderer.cpp
         Renderer/PipelineState.h Renderer/PipelineState.cpp

@@ -9,7 +9,8 @@
 #include "../Scene/Scene.h"
 #include "../Scene/Camera.h"
 #include "../FrameBuffer/FrameBuffer.h"
-#include "../Model/RenderObject.h"
+#include "../Model/Model.h"
+#include "../Model/ScreenQuad.h"
 #include "ShaderProgram.h"
 #include "../Buffers/UniformBuffer.h"
 
@@ -39,9 +40,14 @@ public:
             0, 1, 0,
             0, 0, 0
         };
+        // 卷积采样相对 1px 的倍率；blur 需 >1 才明显
+        float kernel_texel_scale{ 1.0f };
         float exposure{ 1.0 };
         float gamma{ 2.2 };
     };
+
+    static void bindLitSamplerUnits(ShaderProgram &shader);
+    static ShaderMap loadShaders(const std::string &resourceDir, const std::string &shaderSubDir);
 
     Renderer();
     ~Renderer();
@@ -81,7 +87,6 @@ public:
     void render();
 
     void applyShadow();
-    void applyMaterial(const Material &material, ShaderProgram &shader);
 
 private:
     void initFrameBuffers();
@@ -126,7 +131,7 @@ private:
     FrameBuffer composite_framebuffer_;
 
     PostProcParams post_proc_params_{};
-    RenderObject post_proc_quad_;
+    ScreenQuad post_proc_quad_;
     std::optional<ShaderProgram> post_proc_shader_;
     std::optional<ShaderProgram> blur_shader_;
     std::optional<ShaderProgram> composite_shader_;

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <iterator>
@@ -9,11 +10,12 @@
 
 #include "Buffers/InstanceBuffer.h"
 #include "GLFWWin.h"
+#include "Model/DrawableObject.h"
+#include "Model/Helper.h"
 #include "Model/Material.h"
 #include "Model/Model.h"
-#include "Model/RenderObject.h"
+#include "Model/Skybox.h"
 #include "Renderer/Renderer.h"
-#include "Scene/Helper.h"
 #include "Scene/Scene.h"
 
 namespace {
@@ -77,20 +79,22 @@ InstanceBuffer::InstanceData spotMarkerInstance(const SpotLight &spot)
     return instance;
 }
 
-std::vector<Model> createLightMarkers(Renderer &renderer, Scene scene, const std::string &resourceDir)
+std::vector<Model> createLightMarkers(Renderer &, Scene scene, const std::string &resourceDir)
 {
     std::vector<Model> models;
     const auto &lights = scene.data_->lights_;
+    const DrawRequest no_shadow{
+        .cast_shadow = false,
+        .transparent = false,
+    };
 
     for (int i = 0; i < lights.counts_.y; ++i) {
         Material material;
         material.pure_color_ = true;
         material.color_ = glm::vec3(lights.point_[i].diffuse_);
 
-        Model marker{ RenderObject{
-            material, createCubeMesh(),
-            renderer.shader("lit"), ShaderProgram{}, ShaderProgram{}
-        } };
+        Model marker{ DrawableObject{ material, createCubeMesh() } };
+        marker.draw_request_ = no_shadow;
         marker.setInstances(InstanceBuffer::InstanceData{
             .translation_ = glm::vec3(lights.point_[i].position_),
             .scale_ = glm::vec3{ kPointLightMarkerScale }
@@ -113,9 +117,9 @@ std::vector<Model> createLightMarkers(Renderer &renderer, Scene scene, const std
 
     if (lights.counts_.z > 0) {
         Model flashlight{
-            resourceDir + "/model/flash_light", "Flashlight.obj",
-            renderer.shader("lit"), ShaderProgram{}, ShaderProgram{}, false
+            resourceDir + "/model/flash_light", "Flashlight.obj", false
         };
+        flashlight.draw_request_ = no_shadow;
 
         for (int i = 0; i < lights.counts_.z; ++i) {
             Model marker = flashlight;
@@ -150,7 +154,17 @@ Scene createScene(Renderer &renderer, const std::string &resourceDir)
         std::make_move_iterator(markers.end())
     );
 
-    scene.data_->skybox_ = createDefaultSkybox(renderer, resourceDir);
+    scene.data_->skybox_ = Skybox{
+        {
+            resourceDir + "/textures/skybox/right.jpg",
+            resourceDir + "/textures/skybox/left.jpg",
+            resourceDir + "/textures/skybox/top.jpg",
+            resourceDir + "/textures/skybox/bottom.jpg",
+            resourceDir + "/textures/skybox/front.jpg",
+            resourceDir + "/textures/skybox/back.jpg",
+        },
+        false
+    };
     return scene;
 }
 
@@ -161,13 +175,45 @@ void syncRendererFromWindow(Renderer &renderer, const WindowState &win)
     auto params = renderer.postProcParams();
     params.exposure = win.exposure;
     params.gamma = win.gamma;
+
+    // Identity / Blur / EdgeDetect / Sharpen（LearnOpenGL kernels）
+    static constexpr float kKernels[][9] = {
+        {
+            0, 0, 0,
+            0, 1, 0,
+            0, 0, 0
+        },
+        {
+            1.0f / 16, 2.0f / 16, 1.0f / 16,
+            2.0f / 16, 4.0f / 16, 2.0f / 16,
+            1.0f / 16, 2.0f / 16, 1.0f / 16
+        },
+        {
+            1, 1, 1,
+            1, -8, 1,
+            1, 1, 1
+        },
+        {
+            -1, -1, -1,
+            -1,  9, -1,
+            -1, -1, -1
+        },
+    };
+    const int kernel_index = std::clamp(win.post_kernel, 0, 3);
+    params.enable_kernel = kernel_index != 0;
+    // 3x3 blur 只采邻像素，高分辨率下几乎看不见，加大步长
+    params.kernel_texel_scale = (kernel_index == 1) ? 3.0f : 1.0f;
+    for (int i = 0; i < 9; ++i) {
+        params.kernel[i] = kKernels[kernel_index][i];
+    }
+
     renderer.setPostProcParams(params);
 }
 
 Renderer createRenderer(const std::string &resourceDir, const WindowState &win)
 {
     Renderer renderer;
-    renderer.setShaders(loadShaders(resourceDir, "25_hdr"));
+    renderer.setShaders(Renderer::loadShaders(resourceDir, "25_hdr"));
     renderer.setPostProcShader(renderer.shader("quad"));
     renderer.setBlurShader(renderer.shader("blur"));
     renderer.setCompositeShader(renderer.shader("composite"));

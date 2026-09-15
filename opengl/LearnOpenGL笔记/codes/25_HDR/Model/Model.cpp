@@ -3,8 +3,7 @@
 #include "../Buffers/InstanceBuffer.h"
 #include "../Buffers/VertexBuffer.h"
 #include "Material.h"
-#include "RenderObject.h"
-#include "../Renderer/ShaderProgram.h"
+#include "DrawableObject.h"
 #include "../Textures/Texture2D.h"
 #include "assimp/material.h"
 #include "assimp/scene.h"
@@ -13,25 +12,20 @@
 #include <stdexcept>
 #include <string_view>
 #include <vector>
-#include <iostream>
 
 using namespace std::string_literals;
 
 std::map<std::string, Texture> Model::s_loaded_textures;
 
-Model::Model(RenderObject object)
+Model::Model(DrawableObject object)
     : objects_{ std::move(object) }
 {}
 
-Model::Model(std::vector<RenderObject> objects)
+Model::Model(std::vector<DrawableObject> objects)
     : objects_{ std::move(objects) }
 {}
 
-Model::Model(const std::string_view &dir, const std::string_view &file,
-             ShaderProgram render_shader,
-             ShaderProgram directional_shadow_shader,
-             ShaderProgram omni_shadow_shader,
-             bool flipUV)
+Model::Model(const std::string_view &dir, const std::string_view &file, bool flipUV)
 {
     std::string path{ dir };
     path.push_back('/');
@@ -49,12 +43,6 @@ Model::Model(const std::string_view &dir, const std::string_view &file,
     }
 
     processNode(scene->mRootNode, scene, dir);
-
-    for (auto &obj : objects_) {
-        obj.render_shader_ = render_shader;
-        obj.directional_shadow_shader_ = directional_shadow_shader;
-        obj.omni_shadow_shader_ = omni_shadow_shader;
-    }
 }
 
 void Model::processNode(const aiNode *node, const aiScene *scene, const std::string_view &dir)
@@ -63,21 +51,21 @@ void Model::processNode(const aiNode *node, const aiScene *scene, const std::str
     // 若模型存在节点层级变换，应将父节点与当前节点的变换矩阵累乘后传递给子节点。
     // 当前实现忽略。
     for(unsigned int i = 0; i < node->mNumMeshes; i++) {
-        aiMesh *mesh = scene->mMeshes[node->mMeshes[i]]; 
-        objects_.push_back(processMesh(mesh, scene, dir));			
+        aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
+        objects_.push_back(processMesh(mesh, scene, dir));
     }
     for(unsigned int i = 0; i < node->mNumChildren; i++) {
         processNode(node->mChildren[i], scene, dir);
     }
 }
 
-RenderObject Model::processMesh(const aiMesh *mesh, const aiScene *scene, const std::string_view &dir)
+DrawableObject Model::processMesh(const aiMesh *mesh, const aiScene *scene, const std::string_view &dir)
 {
     std::vector<Vertex> vertices;
     std::vector<std::uint32_t> indices;
     if (!mesh->HasTextureCoords(0))
         throw std::runtime_error{ "Mesh has no texture 0" };
-    
+
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         Vertex vertex;
@@ -126,7 +114,7 @@ RenderObject Model::processMesh(const aiMesh *mesh, const aiScene *scene, const 
         m->Get(AI_MATKEY_SHININESS, material.shininess_);
     }
 
-    return RenderObject{
+    return DrawableObject{
         material, Mesh{ vbo, ebo }
     };
 }
@@ -142,8 +130,8 @@ std::vector<Texture> Model::loadTextureFrom(const aiMaterial *material, const ai
         aiString str;
         material->GetTexture(type, i, &str);
         std::string path = d + str.C_Str();
-        // 缓存 key 区分 sRGB，避�?diffuse/normal 共用路径时格式冲�?
-    const std::string cache_key = path + (srgb ? "|srgb" : "|linear");
+        // 缓存 key 区分 sRGB，避免 diffuse/normal 共用路径时格式冲突
+        const std::string cache_key = path + (srgb ? "|srgb" : "|linear");
         if (auto iter = s_loaded_textures.find(cache_key); iter != s_loaded_textures.end()) {
             textures.push_back(iter->second);
         } else {
@@ -162,31 +150,12 @@ void Model::setInstances(InstanceBuffer ibo)
     }
 }
 
-void Model::setRenderShader(ShaderProgram shader)
+void Model::draw(ShaderProgram &shader) const
 {
-    for (auto &obj : objects_) {
-        obj.render_shader_ = shader;
-    }
-}
-
-void Model::setDirectionalShadowShader(ShaderProgram shader)
-{
-    for (auto &obj : objects_) {
-        obj.directional_shadow_shader_ = shader;
-    }
-}
-
-void Model::setOmniShadowShader(ShaderProgram shader)
-{
-    for (auto &obj : objects_) {
-        obj.omni_shadow_shader_ = shader;
-    }
-}
-
-void Model::setShadowShaders(ShaderProgram directional, ShaderProgram omni)
-{
-    for (auto &obj : objects_) {
-        obj.directional_shadow_shader_ = directional;
-        obj.omni_shadow_shader_ = omni;
+    pipeline_state_.apply();
+    shader.use();
+    for (const auto &obj : objects_) {
+        bindMaterial(obj.material_, shader);
+        obj.mesh_.draw(static_cast<GLsizei>(obj.mesh_.instanceCount()));
     }
 }

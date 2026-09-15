@@ -1,13 +1,14 @@
 #include "Renderer.h"
 
 #include <algorithm>
+#include <filesystem>
+#include <format>
 #include <stdexcept>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 
 #include "../FrameBuffer/RenderBufferMS.h"
-#include "../Scene/Helper.h"
+#include "../Model/Helper.h"
 #include "../Textures/Texture2D.h"
 #include "../Textures/Texture2DMS.h"
 
@@ -29,6 +30,109 @@ T getAttachmentOrThrow(const FrameBuffer &fb, GLenum attachment)
 }
 
 } // namespace
+
+void Renderer::bindLitSamplerUnits(ShaderProgram &shader)
+{
+    shader.setUniformIfPresent("material.diffuse_texture", DIFFUSE_UNIT);
+    shader.setUniformIfPresent("material.specular_texture", SPECULAR_UNIT);
+    shader.setUniformIfPresent("material.normal_map", NORMAL_UNIT);
+    shader.setUniformIfPresent("material.height_map", HEIGHT_UNIT);
+    shader.setUniformIfPresent("material.reflect_cube_texture", REFLECT_CUBE_UNIT);
+    shader.setUniformIfPresent("material.refract_cube_texture", REFRACT_CUBE_UNIT);
+
+    for (GLuint i = 0; i < MAX_DIRECTIONAL_LIGHT; ++i) {
+        shader.setUniformIfPresent(
+            std::format("directional_shadow_map[{}]", i),
+            DIR_LIGHT_START_UNIT + i
+        );
+    }
+    for (GLuint i = 0; i < MAX_SPOT_LIGHT; ++i) {
+        shader.setUniformIfPresent(
+            std::format("spot_shadow_map[{}]", i),
+            SPOT_LIGHT_START_UNIT + i
+        );
+    }
+    for (GLuint i = 0; i < MAX_POINT_LIGHT; ++i) {
+        shader.setUniformIfPresent(
+            std::format("point_shadow_map[{}]", i),
+            POINT_LIGHT_START_UNIT + i
+        );
+    }
+}
+
+Renderer::ShaderMap Renderer::loadShaders(const std::string &resourceDir, const std::string &shaderSubDir)
+{
+    ShaderMap shaders;
+    const auto shaderDir = std::filesystem::path{ resourceDir } / "shaders" / shaderSubDir;
+    auto shaderPath = [&](const std::string &file) {
+        return shaderDir / file;
+    };
+    auto add = [&](const std::string &name,
+                   const std::filesystem::path &vert,
+                   const std::filesystem::path &frag,
+                   const std::filesystem::path &geom = {}) {
+        shaders.emplace(name, ShaderProgram{ vert, frag, geom });
+    };
+
+    add("lit",
+        shaderPath("lit.vert"),
+        shaderPath("lit.frag"));
+    shaders.at("lit").setUniformBlockBinding("LightData", 0);
+    shaders.at("lit").setUniformBlockBinding("CamData", 1);
+    bindLitSamplerUnits(shaders.at("lit"));
+
+    add("shadow",
+        shaderPath("shadow.vert"),
+        shaderPath("shadow.frag"));
+
+    add("cube_shadow",
+        shaderPath("cube_shadow.vert"),
+        shaderPath("cube_shadow.frag"),
+        shaderPath("cube_shadow.geom"));
+
+    add("visual_normal",
+        shaderPath("visual_normal.vert"),
+        shaderPath("visual_normal.frag"),
+        shaderPath("visual_normal.geom"));
+    shaders.at("visual_normal").setUniformBlockBinding("CamData", 1);
+    shaders.at("visual_normal").setVec3("normal_color", glm::vec3{ 0, 1, 0 });
+
+    add("explode",
+        shaderPath("explode.vert"),
+        shaderPath("explode.frag"),
+        shaderPath("explode.geom"));
+    shaders.at("explode").setUniformBlockBinding("LightData", 0);
+    shaders.at("explode").setUniformBlockBinding("CamData", 1);
+    bindLitSamplerUnits(shaders.at("explode"));
+
+    add("explode_shadow",
+        shaderPath("shadow_explode.vert"),
+        shaderPath("shadow_explode.frag"),
+        shaderPath("shadow_explode.geom"));
+
+    add("skybox",
+        shaderPath("skybox.vert"),
+        shaderPath("skybox.frag"));
+    shaders.at("skybox").setUniformBlockBinding("CamData", 1);
+    shaders.at("skybox").setInt("skybox", SKYBOX_UNIT);
+
+    add("blur",
+        shaderPath("blur.vert"),
+        shaderPath("blur.frag"));
+    shaders.at("blur").setInt("image", BLOOM_IMAGE_UNIT);
+
+    add("composite",
+        shaderPath("composite.vert"),
+        shaderPath("composite.frag"));
+    shaders.at("composite").setInt("scene", COMPOSITE_SCENE_UNIT);
+    shaders.at("composite").setInt("bloomBlur", COMPOSITE_BLOOM_UNIT);
+
+    add("quad",
+        shaderPath("quad.vert"),
+        shaderPath("quad.frag"));
+    shaders.at("quad").setInt("quad_texture", QUAD_TEXTURE_UNIT);
+    return shaders;
+}
 
 Renderer::Renderer()
 {
@@ -234,12 +338,6 @@ void Renderer::initFrameBuffers()
         throw std::runtime_error{ "Composite FBO is not completed" };
     }
 
-    post_proc_quad_.mesh_ = createQuadMesh(
-        InstanceBuffer{ InstanceBuffer::InstanceData{} }, false
-    );
-    post_proc_quad_.pipeline_state_.depth_test_ = false;
-    post_proc_quad_.pipeline_state_.cull_face_ = false;
-
     FrameBuffer::unbind();
 }
 
@@ -399,9 +497,7 @@ void Renderer::blitColorAttachment(
 
 void Renderer::drawFullscreenQuad(ShaderProgram &program)
 {
-    post_proc_quad_.pipeline_state_.apply();
-    program.use();
-    post_proc_quad_.mesh_.draw(static_cast<GLsizei>(post_proc_quad_.mesh_.instanceCount()));
+    post_proc_quad_.draw(program);
 }
 
 void Renderer::blurBrightPass(int width, int height)
@@ -428,10 +524,10 @@ void Renderer::blurBrightPass(int width, int height)
         // horizontal → blur FBO（读 resolve att1）；vertical → resolve att1（读 blur FBO）
         if (horizontal) {
             blur_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT0);
-            bright_color.bind(BLOOM_IMAGE_UNIT);
+            post_proc_quad_.texture_ = bright_color;
         } else {
             resolve_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT1);
-            blur_color.bind(BLOOM_IMAGE_UNIT);
+            post_proc_quad_.texture_ = blur_color;
         }
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -453,6 +549,7 @@ void Renderer::forwardPass()
     if (bloom_enabled_) {
         const GLenum hdr_bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
         hdr_framebuffer_.drawBuffers(2, hdr_bufs);
+        applyBloomThreshold();
     } else {
         hdr_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT0);
     }
@@ -460,35 +557,18 @@ void Renderer::forwardPass()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    if (bloom_enabled_) {
-        applyBloomThreshold();
-    }
-
-    auto draw_model = [&](Model &model) {
-        for (auto &object : model.objects_) {
-            auto &program = object.render_shader_;
-            if (program.id() == 0) {
-                continue;
-            }
-            object.pipeline_state_.apply();
-            program.use();
-            applyMaterial(object.material_, program);
-            object.mesh_.draw(static_cast<GLsizei>(object.mesh_.instanceCount()));
-        }
-    };
-
     for (auto &model : scene_.data_->models_) {
-        draw_model(model);
+        model.draw(shaders_.at("lit"));
     }
     for (auto &[model, distance] : sortObjectsByDistance(scene_.data_->transparent_models_)) {
         (void)distance;
-        draw_model(*model);
+        model->draw(shaders_.at("lit"));
     }
 
     if (scene_.data_->skybox_) {
         // skybox 只写 scene 颜色，不进 bloom 高光目标
         hdr_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT0);
-        draw_model(*scene_.data_->skybox_);
+        scene_.data_->skybox_->draw(shaders_.at("skybox"));
     }
 
     if (bloom_enabled_) {
@@ -530,7 +610,7 @@ void Renderer::compositePass()
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    scene_color.bind(COMPOSITE_SCENE_UNIT);
+    post_proc_quad_.texture_ = scene_color;
     bloom_color.bind(COMPOSITE_BLOOM_UNIT);
     drawFullscreenQuad(composite_shader);
     FrameBuffer::unbind();
@@ -553,10 +633,14 @@ void Renderer::postProcPass()
     );
     auto &quad_shader = post_proc_shader_.value();
 
-    composite_color.bind(QUAD_TEXTURE_UNIT);
+    post_proc_quad_.texture_ = composite_color;
+    const float texel_scale = post_proc_params_.kernel_texel_scale;
     quad_shader.setVec2(
         "tex_offset",
-        glm::vec2(1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height))
+        glm::vec2(
+            texel_scale / static_cast<float>(width),
+            texel_scale / static_cast<float>(height)
+        )
     );
     quad_shader.setBool("enable_kernel", post_proc_params_.enable_kernel);
     if (post_proc_params_.enable_kernel) {
@@ -579,14 +663,14 @@ void Renderer::renderDirShadow(const std::vector<Model> &models, const glm::mat4
 
 void Renderer::renderDirShadow(const Model &model, const glm::mat4 &light_space)
 {
-    for (auto &object : model.objects_) {
-        auto &shader = object.directional_shadow_shader_;
-        if (shader.id() == 0)
-            continue;
-        shader.setMat4("light_space_transform", light_space);
-        object.mesh_.draw(static_cast<GLsizei>(object.mesh_.instanceCount()));
+    if (!model.draw_request_.cast_shadow) {
+        return;
     }
+    auto &sp = shaders_.at("shadow");
+    sp.setMat4("light_space_transform", light_space);
+    model.draw(sp);
 }
+
 void Renderer::renderOmniShadow(const std::vector<Model> &models, const glm::mat4 *light_spaces, const glm::vec3 &light_pos, float far_plane)
 {
     for (auto &model : models) {
@@ -596,15 +680,14 @@ void Renderer::renderOmniShadow(const std::vector<Model> &models, const glm::mat
 
 void Renderer::renderOmniShadow(const Model &model, const glm::mat4 *light_spaces, const glm::vec3 &light_pos, float far_plane)
 {
-    for (auto &object : model.objects_) {
-        auto &shader = object.omni_shadow_shader_;
-        if (shader.id() == 0)
-            continue;
-        shader.setMat4Arr("light_space_transform", light_spaces, 6);
-        shader.setVec3("light_pos", light_pos);
-        shader.setFloat("far_plane", far_plane);
-        object.mesh_.draw(static_cast<GLsizei>(object.mesh_.instanceCount()));
+    if (!model.draw_request_.cast_shadow) {
+        return;
     }
+    auto &sp = shaders_.at("cube_shadow");
+    sp.setMat4Arr("light_space_transform", light_spaces, 6);
+    sp.setVec3("light_pos", light_pos);
+    sp.setFloat("far_plane", far_plane);
+    model.draw(sp);
 }
 
 void Renderer::bindUniformBuffers() const
@@ -615,22 +698,10 @@ void Renderer::bindUniformBuffers() const
 
 void Renderer::applyBloomThreshold()
 {
-    std::unordered_set<GLuint> applied_shader_ids;
-    auto apply_for_models = [&](std::vector<Model> &models) {
-        for (auto &model : models) {
-            for (auto &object : model.objects_) {
-                auto &program = object.render_shader_;
-                if (program.id() == 0) {
-                    continue;
-                }
-                if (applied_shader_ids.insert(program.id()).second) {
-                    program.setUniformIfPresent("bloom_threshold", bloom_threshold_);
-                }
-            }
-        }
-    };
-    apply_for_models(scene_.data_->models_);
-    apply_for_models(scene_.data_->transparent_models_);
+    shaders_.at("lit").setUniformIfPresent("bloom_threshold", bloom_threshold_);
+    if (auto it = shaders_.find("explode"); it != shaders_.end()) {
+        it->second.setUniformIfPresent("bloom_threshold", bloom_threshold_);
+    }
 }
 
 void Renderer::applyShadow()
@@ -644,49 +715,6 @@ void Renderer::applyShadow()
     for (GLuint i = 0; i < MAX_POINT_LIGHT; ++i) {
         shadow_maps_.point_[i].texture_.bind(POINT_LIGHT_START_UNIT + i);
     }
-}
-
-void Renderer::applyMaterial(const Material &material, ShaderProgram &program)
-{
-    if (material.quad_texture_) {
-        if (const GLint loc = program.uniformLocation("quad_texture"); loc >= 0) {
-            material.quad_texture_->bind(QUAD_TEXTURE_UNIT);
-        }
-        return;
-    }
-
-    if (const GLint loc = program.uniformLocation("skybox"); loc >= 0) {
-        if (material.skybox_) {
-            material.skybox_->bind(SKYBOX_UNIT);
-        }
-        return;
-    }
-
-    program.setUniformIfPresent("material.diffuse_exist", material.diffuse_.has_value());
-    if (material.diffuse_) {
-        material.diffuse_->bind(DIFFUSE_UNIT);
-    }
-
-    program.setUniformIfPresent("material.specular_exist", material.specular_.has_value());
-    if (material.specular_) {
-        material.specular_->bind(SPECULAR_UNIT);
-    }
-
-    program.setUniformIfPresent("material.normal_exist", material.normal_.has_value());
-    if (material.normal_) {
-        material.normal_->bind(NORMAL_UNIT);
-    }
-
-    program.setUniformIfPresent("material.height_exist", material.height_.has_value());
-    if (material.height_) {
-        material.height_->bind(HEIGHT_UNIT);
-    }
-    program.setUniformIfPresent("material.height_scale", material.height_scale_);
-    program.setUniformIfPresent("material.shininess", material.shininess_);
-    program.setUniformIfPresent("material.pure_color", material.pure_color_);
-    program.setUniformIfPresent("material.color", material.color_);
-    program.setUniformIfPresent("material.reflect_cube_exist", false);
-    program.setUniformIfPresent("material.refract_cube_exist", false);
 }
 
 std::vector<std::pair<Model *, float>> Renderer::sortObjectsByDistance(

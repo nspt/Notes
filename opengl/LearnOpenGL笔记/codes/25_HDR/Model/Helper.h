@@ -2,12 +2,9 @@
 
 #include <cmath>
 #include <cstdint>
-#include <filesystem>
-#include <format>
 #include <string>
 #include <utility>
 #include <vector>
-#include <map>
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -18,119 +15,16 @@
 #include "../Buffers/IndexBuffer.h"
 #include "../Buffers/InstanceBuffer.h"
 #include "../Buffers/VertexBuffer.h"
-#include "../Model/Material.h"
-#include "../Model/Mesh.h"
-#include "../Model/Model.h"
-#include "../Model/RenderObject.h"
+#include "Material.h"
+#include "Mesh.h"
+#include "Model.h"
+#include "DrawableObject.h"
+#include "DrawRequest.h"
 #include "../Renderer/PipelineState.h"
 #include "../Renderer/Renderer.h"
-#include "../Renderer/ShaderProgram.h"
 #include "../Textures/Texture2D.h"
 #include "../Textures/TextureCubeMap.h"
 
-
-inline void bindLitSamplerUnits(ShaderProgram &shader)
-{
-    shader.setUniformIfPresent("material.diffuse_texture", Renderer::DIFFUSE_UNIT);
-    shader.setUniformIfPresent("material.specular_texture", Renderer::SPECULAR_UNIT);
-    shader.setUniformIfPresent("material.normal_map", Renderer::NORMAL_UNIT);
-    shader.setUniformIfPresent("material.height_map", Renderer::HEIGHT_UNIT);
-    shader.setUniformIfPresent("material.reflect_cube_texture", Renderer::REFLECT_CUBE_UNIT);
-    shader.setUniformIfPresent("material.refract_cube_texture", Renderer::REFRACT_CUBE_UNIT);
-
-    for (GLuint i = 0; i < MAX_DIRECTIONAL_LIGHT; ++i) {
-        shader.setUniformIfPresent(
-            std::format("directional_shadow_map[{}]", i),
-            Renderer::DIR_LIGHT_START_UNIT + i
-        );
-    }
-    for (GLuint i = 0; i < MAX_SPOT_LIGHT; ++i) {
-        shader.setUniformIfPresent(
-            std::format("spot_shadow_map[{}]", i),
-            Renderer::SPOT_LIGHT_START_UNIT + i
-        );
-    }
-    for (GLuint i = 0; i < MAX_POINT_LIGHT; ++i) {
-        shader.setUniformIfPresent(
-            std::format("point_shadow_map[{}]", i),
-            Renderer::POINT_LIGHT_START_UNIT + i
-        );
-    }
-}
-
-inline Renderer::ShaderMap loadShaders(const std::string &resourceDir, const std::string &shaderSubDir)
-{
-    Renderer::ShaderMap shaders;
-    const auto shaderDir = std::filesystem::path{ resourceDir } / "shaders" / shaderSubDir;
-    auto shaderPath = [&](const std::string &file) {
-        return shaderDir / file;
-    };
-    auto add = [&](const std::string &name,
-                   const std::filesystem::path &vert,
-                   const std::filesystem::path &frag,
-                   const std::filesystem::path &geom = {}) {
-        shaders.emplace(name, ShaderProgram{ vert, frag, geom });
-    };
-
-    add("lit",
-        shaderPath("lit.vert"),
-        shaderPath("lit.frag"));
-    shaders.at("lit").setUniformBlockBinding("LightData", 0);
-    shaders.at("lit").setUniformBlockBinding("CamData", 1);
-    bindLitSamplerUnits(shaders.at("lit"));
-
-    add("shadow",
-        shaderPath("shadow.vert"),
-        shaderPath("shadow.frag"));
-
-    add("cube_shadow",
-        shaderPath("cube_shadow.vert"),
-        shaderPath("cube_shadow.frag"),
-        shaderPath("cube_shadow.geom"));
-
-    add("visual_normal",
-        shaderPath("visual_normal.vert"),
-        shaderPath("visual_normal.frag"),
-        shaderPath("visual_normal.geom"));
-    shaders.at("visual_normal").setUniformBlockBinding("CamData", 1);
-    shaders.at("visual_normal").setVec3("normal_color", glm::vec3{ 0, 1, 0 });
-
-    add("explode",
-        shaderPath("explode.vert"),
-        shaderPath("explode.frag"),
-        shaderPath("explode.geom"));
-    shaders.at("explode").setUniformBlockBinding("LightData", 0);
-    shaders.at("explode").setUniformBlockBinding("CamData", 1);
-    bindLitSamplerUnits(shaders.at("explode"));
-
-    add("explode_shadow",
-        shaderPath("shadow_explode.vert"),
-        shaderPath("shadow_explode.frag"),
-        shaderPath("shadow_explode.geom"));
-
-    add("skybox",
-        shaderPath("skybox.vert"),
-        shaderPath("skybox.frag"));
-    shaders.at("skybox").setUniformBlockBinding("CamData", 1);
-    shaders.at("skybox").setInt("skybox", Renderer::SKYBOX_UNIT);
-
-    add("blur",
-        shaderPath("blur.vert"),
-        shaderPath("blur.frag"));
-    shaders.at("blur").setInt("image", Renderer::BLOOM_IMAGE_UNIT);
-
-    add("composite",
-        shaderPath("composite.vert"),
-        shaderPath("composite.frag"));
-    shaders.at("composite").setInt("scene", Renderer::COMPOSITE_SCENE_UNIT);
-    shaders.at("composite").setInt("bloomBlur", Renderer::COMPOSITE_BLOOM_UNIT);
-
-    add("quad",
-        shaderPath("quad.vert"),
-        shaderPath("quad.frag"));
-    shaders.at("quad").setInt("quad_texture", Renderer::QUAD_TEXTURE_UNIT);
-    return shaders;
-}
 
 inline Mesh createQuadMesh(
     InstanceBuffer ibo = InstanceBuffer{ InstanceBuffer::InstanceData{} },
@@ -268,9 +162,7 @@ inline Model createGrass(const std::string &resourceDir)
     Material material;
     material.diffuse_ = Texture2D(resourceDir + "/textures/grass.png");
     material.diffuse_->setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    return RenderObject{
-        material, createQuadMesh()
-    };
+    return Model{ DrawableObject{ material, createQuadMesh() } };
 }
 
 inline Model createGlassWindow(const std::string &resourceDir)
@@ -278,76 +170,46 @@ inline Model createGlassWindow(const std::string &resourceDir)
     Material material;
     material.diffuse_ = Texture2D(resourceDir + "/textures/window.png");
     material.diffuse_->setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    RenderObject gw{ material, createQuadMesh() };
+    Model gw{ DrawableObject{ material, createQuadMesh() } };
     gw.pipeline_state_.blend_ = true;
+    gw.draw_request_.transparent = true;
     return gw;
 }
 
 
-inline Model createBrickwallCube(Renderer &r, const std::string &resourceDir)
+inline Model createBrickwallCube(Renderer &, const std::string &resourceDir)
 {
     Material material;
     material.diffuse_ = Texture2D(resourceDir + "/textures/brickwall.jpg");
     material.normal_ = Texture2D(resourceDir + "/textures/brickwall_normal.jpg", true, false);
     material.shininess_ = 32.0f;
 
-    return Model{ RenderObject{
-        material, createCubeMesh(),
-        r.shader("lit"), r.shader("shadow"), r.shader("cube_shadow")
+    return Model{ DrawableObject{
+        material, createCubeMesh()
     } };
 }
 
-inline Model createWoodCube(Renderer &r, const std::string &resourceDir)
+inline Model createWoodCube(Renderer &, const std::string &resourceDir)
 {
     Material material;
     material.diffuse_ = Texture2D(resourceDir + "/textures/wood.png");
     material.shininess_ = 32.0f;
 
-    return Model{ RenderObject{
-        material, createCubeMesh(),
-        r.shader("lit"), r.shader("shadow"), r.shader("cube_shadow")
+    return Model{ DrawableObject{
+        material, createCubeMesh()
     } };
 }
 
-inline Model createContainerCube(Renderer &r, const std::string &resourceDir)
+inline Model createContainerCube(Renderer &, const std::string &resourceDir)
 {
     Material material;
     material.diffuse_ = Texture2D(resourceDir + "/textures/container2.png");
     material.specular_ = Texture2D(resourceDir + "/textures/container2_specular.png");
     material.shininess_ = 32.0f;
 
-    return Model{ RenderObject{
-        material, createCubeMesh(),
-        r.shader("lit"), r.shader("shadow"), r.shader("cube_shadow")
+    return Model{ DrawableObject{
+        material, createCubeMesh()
     } };
-}
-
-inline Model createDefaultSkybox(Renderer &r, const std::string &resourceDir)
-{
-    Material material;
-    material.skybox_ = TextureCubeMap{
-        {
-            resourceDir + "/textures/skybox/right.jpg",
-            resourceDir + "/textures/skybox/left.jpg",
-            resourceDir + "/textures/skybox/top.jpg",
-            resourceDir + "/textures/skybox/bottom.jpg",
-            resourceDir + "/textures/skybox/front.jpg",
-            resourceDir + "/textures/skybox/back.jpg",
-        },
-        false
-    };
-
-    RenderObject skybox{
-        material,
-        createCubeMesh(InstanceBuffer{ InstanceBuffer::InstanceData{} }, false),
-        r.shader("skybox")
-    };
-    // 相机在立方体内部，看的是外侧面的背面 → 剔正面
-    skybox.pipeline_state_.cull_face_ = true;
-    skybox.pipeline_state_.cull_face_mode_ = GL_FRONT;
-    skybox.pipeline_state_.depth_func_ = GL_LEQUAL;
-    skybox.pipeline_state_.depth_write_ = false;
-    return Model{ std::move(skybox) };
 }
 
 inline Model createOutlineModel(Model &model, GLint stencil_ref = 1,
@@ -356,27 +218,25 @@ inline Model createOutlineModel(Model &model, GLint stencil_ref = 1,
 {
     Model outline = model;
 
-    for (auto &obj : model.objects_) {
-        obj.pipeline_state_.stencil_test_ = true;
-        obj.pipeline_state_.stencil_func_ = GL_ALWAYS;
-        obj.pipeline_state_.stencil_ref_ = stencil_ref;
-        obj.pipeline_state_.stencil_mask_ = 0xff;
-        obj.pipeline_state_.stencil_sfail_ = GL_KEEP;
-        obj.pipeline_state_.stencil_dpfail_ = GL_KEEP;
-        obj.pipeline_state_.stencil_dppass_ = GL_REPLACE;
-        obj.pipeline_state_.stencil_write_mask_ = 0xff;
-    }
+    model.pipeline_state_.stencil_test_ = true;
+    model.pipeline_state_.stencil_func_ = GL_ALWAYS;
+    model.pipeline_state_.stencil_ref_ = stencil_ref;
+    model.pipeline_state_.stencil_mask_ = 0xff;
+    model.pipeline_state_.stencil_sfail_ = GL_KEEP;
+    model.pipeline_state_.stencil_dpfail_ = GL_KEEP;
+    model.pipeline_state_.stencil_dppass_ = GL_REPLACE;
+    model.pipeline_state_.stencil_write_mask_ = 0xff;
+
+    outline.pipeline_state_.stencil_test_ = true;
+    outline.pipeline_state_.stencil_func_ = GL_NOTEQUAL;
+    outline.pipeline_state_.stencil_ref_ = stencil_ref;
+    outline.pipeline_state_.stencil_mask_ = 0xff;
+    outline.pipeline_state_.stencil_sfail_ = GL_KEEP;
+    outline.pipeline_state_.stencil_dpfail_ = GL_KEEP;
+    outline.pipeline_state_.stencil_dppass_ = GL_KEEP;
+    outline.pipeline_state_.stencil_write_mask_ = 0x00;
 
     for (auto &obj : outline.objects_) {
-        obj.pipeline_state_.stencil_test_ = true;
-        obj.pipeline_state_.stencil_func_ = GL_NOTEQUAL;
-        obj.pipeline_state_.stencil_ref_ = stencil_ref;
-        obj.pipeline_state_.stencil_mask_ = 0xff;
-        obj.pipeline_state_.stencil_sfail_ = GL_KEEP;
-        obj.pipeline_state_.stencil_dpfail_ = GL_KEEP;
-        obj.pipeline_state_.stencil_dppass_ = GL_KEEP;
-        obj.pipeline_state_.stencil_write_mask_ = 0x00;
-
         auto instances = obj.mesh_.instanceBuffer().data();
         for (auto &instance : instances) {
             instance.scale_ *= scale_factor;
