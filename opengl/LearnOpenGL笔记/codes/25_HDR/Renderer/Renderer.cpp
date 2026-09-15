@@ -1,7 +1,6 @@
 #include "Renderer.h"
 
 #include <algorithm>
-#include <format>
 #include <stdexcept>
 #include <unordered_set>
 #include <utility>
