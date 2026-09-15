@@ -13,7 +13,7 @@ struct DirectionalLight {
 
 struct SpotLight {
     vec4 position;
-    vec4 direction;     // xyz
+    vec4 direction;
     vec4 cutoff;        // x: inner cos, y: outer cos, z: inv_epsilon
     vec4 ambient;
     vec4 diffuse;
@@ -24,7 +24,7 @@ struct SpotLight {
 };
 
 struct PointLight {
-    vec4 position;
+    vec4 position;      // xyz: position, w: near_plane
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;

@@ -24,7 +24,7 @@ struct alignas(16) DirectionalLight {
 
 struct alignas(16) SpotLight {
     glm::vec4 position_;
-    glm::vec4 direction_;     // xyz
+    glm::vec4 direction_;
     glm::vec4 cutoff_;        // x: inner cos, y: outer cos, z: inv_epsilon
     glm::vec4 ambient_;
     glm::vec4 diffuse_;
@@ -35,7 +35,7 @@ struct alignas(16) SpotLight {
 };
 
 struct alignas(16) PointLight {
-    glm::vec4 position_;
+    glm::vec4 position_; // xyz: position, w: near_plane
     glm::vec4 ambient_;
     glm::vec4 diffuse_;
     glm::vec4 specular_;

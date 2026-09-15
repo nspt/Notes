@@ -34,14 +34,19 @@ LightData createLightData()
     lights.directional_[0].diffuse_ = glm::vec4{ 0.8f };
     lights.directional_[0].specular_ = glm::vec4{ 1.0f };
 
+    // x: min bias, y: slope bias, z/w: cubemap 边长（>0 即启用阴影）
+    const glm::vec4 point_shadow{ 0.05f, 0.05f, 1024.0f, 1024.0f };
+    const glm::vec4 attenuation{ 1.0f, 0.09f, 0.032f, 25.0f };
+    constexpr float point_near = 0.1f;
+
     // 高亮白光在容器远端；其余彩色点光分布在它与原点之间，xy∈[-1,1]
-    lights.point_[0].position_ = glm::vec4{ 0.0f, 0.0f, -9.8f, 1.0f };
+    lights.point_[0].position_ = glm::vec4{ 0.0f, 0.0f, -9.0f, point_near };
     lights.point_[0].ambient_ = glm::vec4{ 0.05f };
     lights.point_[0].diffuse_ = glm::vec4{ 100.0f };
     lights.point_[0].specular_ = glm::vec4{ 100.0f };
-    lights.point_[0].attenuation_ = glm::vec4{ 1.0f, 0.09f, 0.032f, 0.0f };
+    lights.point_[0].attenuation_ = attenuation;
+    lights.point_[0].shadow_ = point_shadow;
 
-    const glm::vec4 attenuation{ 1.0f, 0.09f, 0.032f, 0.0f };
     const struct {
         glm::vec3 pos;
         glm::vec3 color;
@@ -53,14 +58,15 @@ LightData createLightData()
         { { -0.5f, -0.6f,  -9.5f }, { 1.0f, 0.85f, 0.1f }, 10.0f }, // 黄
     };
     auto colored_points_count = sizeof(colored_points) / sizeof(colored_points[0]);
-    lights.counts_.y = colored_points_count + 1;
-    for (int i = 0; i < colored_points_count; ++i) {
+    lights.counts_.y = static_cast<int>(colored_points_count) + 1;
+    for (int i = 0; i < static_cast<int>(colored_points_count); ++i) {
         const auto &p = colored_points[i];
-        lights.point_[i + 1].position_ = glm::vec4{ p.pos, 1.0f };
+        lights.point_[i + 1].position_ = glm::vec4{ p.pos, point_near };
         lights.point_[i + 1].ambient_ = glm::vec4{ 0.0f };
         lights.point_[i + 1].diffuse_ = glm::vec4{ p.color * p.intensity, 1.0f };
         lights.point_[i + 1].specular_ = glm::vec4{ p.color * p.intensity, 1.0f };
         lights.point_[i + 1].attenuation_ = attenuation;
+        lights.point_[i + 1].shadow_ = point_shadow;
     }
     return lights;
 }
@@ -154,19 +160,18 @@ Scene createScene(Renderer &renderer, const std::string &resourceDir)
         std::make_move_iterator(markers.end())
     );
 
-    // 容器半尺寸 (1, 1, 10)；玻璃贴在外侧
-    const glm::quat face_neg_x = glm::angleAxis(glm::radians(-90.0f), glm::vec3{ 0.0f, 1.0f, 0.0f });
-    const glm::quat face_pos_x = glm::angleAxis(glm::radians(90.0f), glm::vec3{ 0.0f, 1.0f, 0.0f });
-    const glm::vec3 window_scale{ 0.7f, 0.7f, 1.0f };
+    // 分散在容器外（容器约 x,y∈[-1,1]，z∈[-10,10]）
+    const glm::vec3 window_scale{ 0.8f, 0.8f, 1.0f };
     const struct {
         glm::vec3 translation;
-        glm::quat rotation;
+        float yaw_deg;
     } glasses[] = {
-        { {  0.0f, 0.0f,  11.2f }, glm::quat{} },      // +Z 端外
-        { {  1.4f, 0.0f,   4.0f }, face_neg_x },       // +X 侧外
-        { { -1.4f, 0.0f,   2.0f }, face_pos_x },       // -X 侧外
-        { {  1.4f, 0.0f,  -3.0f }, face_neg_x },
-        { {  0.0f, 0.0f, -11.2f }, glm::angleAxis(glm::radians(180.0f), glm::vec3{ 0.0f, 1.0f, 0.0f }) },
+        { {  3.5f,  0.2f,   6.0f },  35.0f },
+        { { -4.0f, -0.3f,   1.5f }, -50.0f },
+        { {  2.8f,  0.5f,  -5.0f }, 110.0f },
+        { { -3.2f,  0.0f,  -8.0f }, -20.0f },
+        { {  0.5f,  1.5f,  12.5f },  15.0f },
+        { { -1.0f, -0.8f, -13.0f }, 160.0f },
     };
     Model glass_proto = createGlassWindow(resourceDir);
     glass_proto.draw_request_.cast_shadow = false;
@@ -174,7 +179,7 @@ Scene createScene(Renderer &renderer, const std::string &resourceDir)
         Model glass = glass_proto;
         glass.setInstances(InstanceBuffer::InstanceData{
             .translation_ = g.translation,
-            .rotation_ = g.rotation,
+            .rotation_ = glm::angleAxis(glm::radians(g.yaw_deg), glm::vec3{ 0.0f, 1.0f, 0.0f }),
             .scale_ = window_scale
         });
         scene.data_->transparent_models_.push_back(std::move(glass));

@@ -466,8 +466,9 @@ void Renderer::shadowPass()
         glClear(GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, s.texture_.width(), s.texture_.height());
         const glm::vec3 light_pos{ l.position_ };
+        const float near_plane = l.position_.w;
         const float far_plane = l.attenuation_.w;
-        const auto transforms = calcPointLightSpaceTransforms(light_pos, 1.0f, far_plane);
+        const auto transforms = calcPointLightSpaceTransforms(light_pos, near_plane, far_plane);
         renderOmniShadow(scene_.data_->models_, transforms.data(), light_pos, far_plane);
         renderOmniShadow(scene_.data_->transparent_models_, transforms.data(), light_pos, far_plane);
     }
@@ -560,15 +561,20 @@ void Renderer::forwardPass()
     for (auto &model : scene_.data_->models_) {
         model.draw(shaders_.at("lit"));
     }
+
+    if (scene_.data_->skybox_) {
+        // skybox 只写 scene 颜色，不进 bloom
+        hdr_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT0);
+        scene_.data_->skybox_->draw(shaders_.at("skybox"));
+        if (bloom_enabled_) {
+            const GLenum hdr_bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+            hdr_framebuffer_.drawBuffers(2, hdr_bufs);
+        }
+    }
+
     for (auto &[model, distance] : sortObjectsByDistance(scene_.data_->transparent_models_)) {
         (void)distance;
         model->draw(shaders_.at("lit"));
-    }
-
-    if (scene_.data_->skybox_) {
-        // skybox 只写 scene 颜色，不进 bloom 高光目标
-        hdr_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT0);
-        scene_.data_->skybox_->draw(shaders_.at("skybox"));
     }
 
     if (bloom_enabled_) {
