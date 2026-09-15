@@ -103,21 +103,61 @@ float omniShadowLitFactor(vec3 to_light_vec, samplerCube depth_map,
     return lit / 20.0;
 }
 
+// GLSL 330 不能对 sampler 数组做动态索引，按常量下标分支采样
+float sampleDirShadow(int i, vec4 light_space_pos, vec2 texel_size, float bias)
+{
+    if (i == 0)
+        return dirShadowLitFactor(light_space_pos, directional_shadow_map[0], texel_size, bias);
+    return dirShadowLitFactor(light_space_pos, directional_shadow_map[1], texel_size, bias);
+}
+
+float sampleSpotShadow(int i, vec4 light_space_pos, vec2 texel_size, float bias)
+{
+    if (i == 0)
+        return dirShadowLitFactor(light_space_pos, spot_shadow_map[0], texel_size, bias);
+    if (i == 1)
+        return dirShadowLitFactor(light_space_pos, spot_shadow_map[1], texel_size, bias);
+    if (i == 2)
+        return dirShadowLitFactor(light_space_pos, spot_shadow_map[2], texel_size, bias);
+    return dirShadowLitFactor(light_space_pos, spot_shadow_map[3], texel_size, bias);
+}
+
+float samplePointShadow(int i, vec3 to_light_vec, float bias, float far_plane,
+                        float to_camera_distance)
+{
+    if (i == 0)
+        return omniShadowLitFactor(to_light_vec, point_shadow_map[0], bias, far_plane, to_camera_distance);
+    if (i == 1)
+        return omniShadowLitFactor(to_light_vec, point_shadow_map[1], bias, far_plane, to_camera_distance);
+    if (i == 2)
+        return omniShadowLitFactor(to_light_vec, point_shadow_map[2], bias, far_plane, to_camera_distance);
+    if (i == 3)
+        return omniShadowLitFactor(to_light_vec, point_shadow_map[3], bias, far_plane, to_camera_distance);
+    if (i == 4)
+        return omniShadowLitFactor(to_light_vec, point_shadow_map[4], bias, far_plane, to_camera_distance);
+    if (i == 5)
+        return omniShadowLitFactor(to_light_vec, point_shadow_map[5], bias, far_plane, to_camera_distance);
+    if (i == 6)
+        return omniShadowLitFactor(to_light_vec, point_shadow_map[6], bias, far_plane, to_camera_distance);
+    return omniShadowLitFactor(to_light_vec, point_shadow_map[7], bias, far_plane, to_camera_distance);
+}
+
 vec3 calcDirectionalLights(vec3 normal, vec3 to_camera, vec3 ambient, vec3 diffuse, vec3 specular)
 {
     vec3 result = vec3(0.0);
     for (int i = 0; i < lightData.counts.x; ++i) {
         vec3 light_dir = lightData.directional[i].direction.xyz;
-        float bias = dot(normal, light_dir) * shadowMap.directional[i].bias.slope_bias
-                   + shadowMap.directional[i].bias.min_bias;
-        float lit = (i < shadowMap.counts.x)
-            ? dirShadowLitFactor(fs_in.v_dls_pos[i],
-                                 shadowMap.directional[i].map,
-                                 shadowMap.directional[i].texel_size, bias)
-            : 1.0;
-        float diff = max(dot(normal, -light_dir), 0.0);
+        float lit = 1.0;
+        if (lightData.directional[i].shadow.z > 0.0) {
+            float bias = dot(normal, light_dir) * lightData.directional[i].shadow.y
+                + lightData.directional[i].shadow.x;
+            lit = sampleDirShadow(i, fs_in.v_dls_pos[i], lightData.directional[i].shadow.zw, bias);
+        }
+        float n_dot_l = dot(normal, -light_dir);
+        float diff = max(n_dot_l, 0.0);
         vec3 halfway = normalize(-light_dir + to_camera);
-        float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
+        float spec = pow(max(dot(normal, halfway), 0.0), material.shininess)
+            * step(0.0, n_dot_l);
         result += lightData.directional[i].ambient.xyz * ambient;
         result += lightData.directional[i].diffuse.xyz * diff * diffuse * lit;
         result += lightData.directional[i].specular.xyz * spec * specular * lit;
@@ -134,18 +174,23 @@ vec3 calcPointLights(vec3 normal, vec3 to_camera, float to_camera_distance,
         float distance = length(to_light_vec);
         vec3 to_light = to_light_vec / distance;
         vec3 light_dir = -to_light;
-        float bias = dot(normal, light_dir) * shadowMap.point[i].bias.slope_bias
-                   + shadowMap.point[i].bias.min_bias;
-        float diff = max(dot(normal, to_light), 0.0);
+        float n_dot_l = dot(normal, to_light);
+        float diff = max(n_dot_l, 0.0);
         vec3 halfway = normalize(to_light + to_camera);
-        float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
+        float spec = pow(max(dot(normal, halfway), 0.0), material.shininess)
+            * step(0.0, n_dot_l);
         float attenuation = 1.0 / (lightData.point[i].attenuation.x
             + lightData.point[i].attenuation.y * distance
             + lightData.point[i].attenuation.z * (distance * distance));
-        float lit = (i < shadowMap.counts.y)
-            ? omniShadowLitFactor(to_light_vec, shadowMap.point[i].map, bias,
-                                  shadowMap.point[i].far_plane, to_camera_distance)
-            : 1.0;
+        float lit = 1.0;
+        if (lightData.point[i].shadow.z > 0.0) {
+            float bias = dot(normal, light_dir) * lightData.point[i].shadow.y
+                + lightData.point[i].shadow.x;
+            lit = samplePointShadow(
+                i, to_light_vec, bias,
+                lightData.point[i].attenuation.w, to_camera_distance
+            );
+        }
         vec3 contrib = lightData.point[i].ambient.xyz * ambient
                      + lightData.point[i].diffuse.xyz * diff * diffuse * lit
                      + lightData.point[i].specular.xyz * spec * specular * lit;
@@ -162,11 +207,11 @@ vec3 calcSpotLights(vec3 normal, vec3 to_camera, vec3 ambient, vec3 diffuse, vec
         float distance = length(to_light_vec);
         vec3 to_light = to_light_vec / distance;
         vec3 light_dir = lightData.spot[i].direction.xyz;
-        float bias = dot(normal, light_dir) * shadowMap.spot[i].bias.slope_bias
-                   + shadowMap.spot[i].bias.min_bias;
-        float diff = max(dot(normal, to_light), 0.0);
+        float n_dot_l = dot(normal, to_light);
+        float diff = max(n_dot_l, 0.0);
         vec3 halfway = normalize(to_light + to_camera);
-        float spec = pow(max(dot(normal, halfway), 0.0), material.shininess);
+        float spec = pow(max(dot(normal, halfway), 0.0), material.shininess)
+            * step(0.0, n_dot_l);
         float attenuation = 1.0 / (lightData.spot[i].attenuation.x
             + lightData.spot[i].attenuation.y * distance
             + lightData.spot[i].attenuation.z * (distance * distance));
@@ -176,11 +221,12 @@ vec3 calcSpotLights(vec3 normal, vec3 to_camera, vec3 ambient, vec3 diffuse, vec
         float intensity = inv_epsilon > 0.0
             ? clamp((theta - outer_cutoff) * inv_epsilon, 0.0, 1.0)
             : (theta > outer_cutoff ? 1.0 : 0.0);
-        float lit = (i < shadowMap.counts.z)
-            ? dirShadowLitFactor(fs_in.v_sls_pos[i],
-                                 shadowMap.spot[i].map,
-                                 shadowMap.spot[i].texel_size, bias)
-            : 1.0;
+        float lit = 1.0;
+        if (lightData.spot[i].shadow.z > 0.0) {
+            float bias = dot(normal, light_dir) * lightData.spot[i].shadow.y
+                + lightData.spot[i].shadow.x;
+            lit = sampleSpotShadow(i, fs_in.v_sls_pos[i], lightData.spot[i].shadow.zw, bias);
+        }
         vec3 contrib = lightData.spot[i].ambient.xyz * ambient
                      + lightData.spot[i].diffuse.xyz * diff * diffuse * lit
                      + lightData.spot[i].specular.xyz * spec * specular * lit;

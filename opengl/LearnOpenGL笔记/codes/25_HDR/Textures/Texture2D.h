@@ -12,8 +12,4 @@ public:
     void generateMipmap() const;
     void reallocate(int width, int height, GLenum internalFormat, GLenum format,
                     void *data = nullptr, GLenum type = GL_UNSIGNED_BYTE);
-
-private:
-    void init(void *data, int width, int height, GLenum internalFormat, GLenum format,
-              GLenum type = GL_UNSIGNED_BYTE) noexcept;
 };

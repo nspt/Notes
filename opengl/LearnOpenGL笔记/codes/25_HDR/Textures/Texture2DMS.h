@@ -12,9 +12,6 @@ public:
     GLsizei samples() const noexcept;
 
 private:
-    void init(int width, int height, GLenum internalFormat, GLsizei samples,
-              GLboolean fixedSampleLocations) noexcept;
-
     struct MSProp {
         GLsizei samples_{ 0 };
         GLboolean fixed_sample_locations_{ GL_TRUE };

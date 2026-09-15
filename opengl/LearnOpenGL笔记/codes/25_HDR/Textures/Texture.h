@@ -19,6 +19,7 @@ public:
     bool valid() const noexcept;
 
     void setWrapMode(GLint wrapS, GLint wrapT, std::optional<GLint> wrapR = std::nullopt) const;
+    void setFilterMode(GLint minFilter, GLint magFilter) const;
 
     bool operator==(const Texture &rhs) const noexcept = default;
 protected:

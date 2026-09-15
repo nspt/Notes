@@ -51,7 +51,12 @@ ShaderProgram::ShaderProgram(const std::filesystem::path& vertexShaderPath,
 
 void ShaderProgram::use() const
 {
+    static GLuint current_id = 0;
+    if (current_id == data_->id_) {
+        return;
+    }
     glUseProgram(data_->id_);
+    current_id = data_->id_;
 }
 
 GLuint ShaderProgram::id() const noexcept

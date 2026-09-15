@@ -20,7 +20,6 @@ out VS_OUT {
 
 #include "common/cam_data.glsl"
 #include "common/light_data.glsl"
-#include "common/shadow_map.glsl"
 
 void main()
 {
@@ -35,10 +34,10 @@ void main()
     vs_out.v_ws_to_camera = cam_data.pos.xyz - world_pos.xyz;
 
     for (int i = 0; i < 2; ++i) {
-        vs_out.v_dls_pos[i] = shadowMap.directional[i].transform * world_pos;
+        vs_out.v_dls_pos[i] = lightData.directional[i].transform * world_pos;
     }
     for (int i = 0; i < 4; ++i) {
-        vs_out.v_sls_pos[i] = shadowMap.spot[i].transform * world_pos;
+        vs_out.v_sls_pos[i] = lightData.spot[i].transform * world_pos;
     }
     for (int i = 0; i < lightData.counts.y; ++i) {
         vs_out.v_ws_to_point_light[i] = lightData.point[i].position.xyz - world_pos.xyz;

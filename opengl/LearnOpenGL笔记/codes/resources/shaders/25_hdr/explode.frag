@@ -14,7 +14,6 @@ in GS_OUT {
 
 #include "common/cam_data.glsl"
 #include "common/light_data.glsl"
-#include "common/shadow_map.glsl"
 #include "common/material.glsl"
 #include "common/lighting.glsl"
 

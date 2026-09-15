@@ -62,6 +62,12 @@ GLuint &cachedBoundId(GLuint unit, GLenum target)
     return g_bound_ids[unit][static_cast<int>(targetIndex(target))];
 }
 
+bool supportsSamplerParams(GLenum target)
+{
+    return target != GL_TEXTURE_2D_MULTISAMPLE
+        && target != GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+}
+
 } // namespace
 
 Texture::Texture(GLenum target)
@@ -74,12 +80,29 @@ Texture::Texture(GLenum target)
 
 void Texture::setWrapMode(GLint wrapS, GLint wrapT, std::optional<GLint> wrapR) const
 {
+    if (!supportsSamplerParams(prop_->target_)) {
+        throw std::logic_error{
+            std::format("Texture target {:#x} does not support wrap mode", prop_->target_)
+        };
+    }
     bind(0);
     glTexParameteri(prop_->target_, GL_TEXTURE_WRAP_S, wrapS);
     glTexParameteri(prop_->target_, GL_TEXTURE_WRAP_T, wrapT);
     if (wrapR.has_value()) {
         glTexParameteri(prop_->target_, GL_TEXTURE_WRAP_R, wrapR.value());
     }
+}
+
+void Texture::setFilterMode(GLint minFilter, GLint magFilter) const
+{
+    if (!supportsSamplerParams(prop_->target_)) {
+        throw std::logic_error{
+            std::format("Texture target {:#x} does not support filter mode", prop_->target_)
+        };
+    }
+    bind(0);
+    glTexParameteri(prop_->target_, GL_TEXTURE_MIN_FILTER, minFilter);
+    glTexParameteri(prop_->target_, GL_TEXTURE_MAG_FILTER, magFilter);
 }
 
 void Texture::bind(GLuint unit) const

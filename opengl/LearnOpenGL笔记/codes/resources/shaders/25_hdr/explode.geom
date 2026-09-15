@@ -29,7 +29,6 @@ out GS_OUT {
 
 #include "common/cam_data.glsl"
 #include "common/light_data.glsl"
-#include "common/shadow_map.glsl"
 
 uniform float explode_magnitude;
 
@@ -60,10 +59,10 @@ void main()
 
         vec4 exploded_world_pos = vec4(gs_out.v_ws_pos, 1.0);
         for (int j = 0; j < 2; ++j) {
-            gs_out.v_dls_pos[j] = shadowMap.directional[j].transform * exploded_world_pos;
+            gs_out.v_dls_pos[j] = lightData.directional[j].transform * exploded_world_pos;
         }
         for (int j = 0; j < 4; ++j) {
-            gs_out.v_sls_pos[j] = shadowMap.spot[j].transform * exploded_world_pos;
+            gs_out.v_sls_pos[j] = lightData.spot[j].transform * exploded_world_pos;
         }
 
         gs_out.v_ws_to_camera = cam_data.pos.xyz - gs_out.v_ws_pos;

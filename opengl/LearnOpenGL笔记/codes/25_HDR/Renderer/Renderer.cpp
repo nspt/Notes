@@ -33,8 +33,8 @@ T getAttachmentOrThrow(const FrameBuffer &fb, GLenum attachment)
 
 Renderer::Renderer()
 {
-    createFrameBuffers();
-    createShadowResources();
+    initFrameBuffers();
+    initShadowResources();
 }
 
 Renderer::~Renderer() {}
@@ -44,7 +44,7 @@ void Renderer::setScene(Scene scene)
     scene_ = std::move(scene);
     light_ubo_.setSubData(0, sizeof(LightData), &scene_.data_->lights_);
     reallocFrameBuffers();
-    createShadowResources();
+    initShadowResources();
 }
 
 Scene Renderer::scene() const
@@ -179,15 +179,12 @@ void Renderer::render()
 {
     bindUniformBuffers();
     shadowPass();
+    applyShadow();
     forwardPass();
-    if (bloom_enabled_) {
-        blurBrightPass(std::get<2>(viewport_), std::get<3>(viewport_));
-        compositePass();
-    }
     postProcPass();
 }
 
-void Renderer::createFrameBuffers()
+void Renderer::initFrameBuffers()
 {
     const int width = std::get<2>(viewport_);
     const int height = std::get<3>(viewport_);
@@ -207,6 +204,8 @@ void Renderer::createFrameBuffers()
 
     Texture2D color{ width, height, color_fmt, GL_RGB, nullptr };
     Texture2D bright{ width, height, color_fmt, GL_RGB, nullptr };
+    color.setFilterMode(GL_LINEAR, GL_LINEAR);
+    bright.setFilterMode(GL_LINEAR, GL_LINEAR);
     color.setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     bright.setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     resolve_framebuffer_.attachTexture(GL_COLOR_ATTACHMENT0, color);
@@ -218,6 +217,7 @@ void Renderer::createFrameBuffers()
     }
 
     Texture2D blur_color{ width, height, color_fmt, GL_RGB, nullptr };
+    blur_color.setFilterMode(GL_LINEAR, GL_LINEAR);
     blur_color.setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     blur_framebuffer_.attachTexture(GL_COLOR_ATTACHMENT0, blur_color);
     const GLenum blur_bufs[] = { GL_COLOR_ATTACHMENT0 };
@@ -227,6 +227,7 @@ void Renderer::createFrameBuffers()
     }
 
     Texture2D composite_color{ width, height, color_fmt, GL_RGB, nullptr };
+    composite_color.setFilterMode(GL_LINEAR, GL_LINEAR);
     composite_color.setWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     composite_framebuffer_.attachTexture(GL_COLOR_ATTACHMENT0, composite_color);
     composite_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT0);
@@ -290,67 +291,89 @@ void Renderer::bindFinalFrameBuffer() const
     }
 }
 
-void Renderer::createShadowResources(int shadow_map_size)
+void Renderer::initShadowResources()
 {
-    auto &sd{ scene_.data_->shadows_ };
-    const auto directional_count = static_cast<size_t>(sd.directional_.size());
-    const auto point_count = static_cast<size_t>(sd.point_.size());
-    const auto spot_count = static_cast<size_t>(sd.spot_.size());
-
-    auto &sr{ shadow_resources_ };
-    sr = {};
-    for (size_t i = 0; i < directional_count; ++i) {
-        auto texture = createShadowMapTexture(shadow_map_size);
-        sr.directional_.push_back({
-            sd.directional_[i], texture, createShadowMapFBO(texture)
-        });
+    shadow_maps_ = {};
+    for (size_t i = 0; i < MAX_DIRECTIONAL_LIGHT; ++i) {
+        auto &l{ scene_.data_->lights_.directional_[i] };
+        auto &s{ shadow_maps_.directional_[i] };
+        int tex_w = static_cast<int>(roundf(l.shadow_.z));
+        int tex_h = static_cast<int>(roundf(l.shadow_.w));
+        if (!tex_w || !tex_h) {
+            continue;
+        }
+        s.texture_ = createShadowMapTexture(tex_w, tex_h);
+        s.fb_ = createShadowMapFBO(shadow_maps_.directional_[i].texture_);
     }
-    for (size_t i = 0; i < spot_count; ++i) {
-        auto texture = createShadowMapTexture(shadow_map_size);
-        sr.spot_.push_back({
-            sd.spot_[i], texture, createShadowMapFBO(texture)
-        });
+    for (size_t i = 0; i < MAX_SPOT_LIGHT; ++i) {
+        auto &l{ scene_.data_->lights_.spot_[i] };
+        auto &s{ shadow_maps_.spot_[i] };
+        int tex_w = static_cast<int>(roundf(l.shadow_.z));
+        int tex_h = static_cast<int>(roundf(l.shadow_.w));
+        if (!tex_w || !tex_h) {
+            continue;
+        }
+        s.texture_ = createShadowMapTexture(tex_w, tex_h);
+        s.fb_ = createShadowMapFBO(shadow_maps_.spot_[i].texture_);
     }
-    for (size_t i = 0; i < point_count; ++i) {
-        auto texture = createShadowMapTextureCube(shadow_map_size);
-        sr.point_.push_back({
-            sd.point_[i], texture, createShadowMapFBO(texture)
-        });
+    for (size_t i = 0; i < MAX_POINT_LIGHT; ++i) {
+        auto &l{ scene_.data_->lights_.point_[i] };
+        auto &s{ shadow_maps_.point_[i] };
+        int tex_w = static_cast<int>(roundf(l.shadow_.z));
+        int tex_h = static_cast<int>(roundf(l.shadow_.w));
+        if (!tex_w || !tex_h) {
+            continue;
+        }
+        s.texture_ = createShadowMapTextureCube(tex_w, tex_h);
+        s.fb_ = createShadowMapFBO(shadow_maps_.point_[i].texture_);
     }
 }
 
 void Renderer::shadowPass()
 {
-    ShadowResources &sr{ shadow_resources_ };
     PipelineState shadow_state;
     shadow_state.cull_face_mode_ = GL_FRONT;
     shadow_state.apply();
 
-    for (size_t i = 0; i < sr.directional_.size(); ++i) {
-        sr.directional_[i].fb.bind();
+    for (size_t i = 0; i < MAX_DIRECTIONAL_LIGHT; ++i) {
+        auto &l{ scene_.data_->lights_.directional_[i] };
+        if (l.shadow_.z == 0) {
+            continue;
+        }
+        auto &s{ shadow_maps_.directional_[i] };
+        s.fb_.bind();
         glClear(GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, sr.directional_[i].texture.width(), sr.directional_[i].texture.height());
-        renderDirShadow(sr.directional_[i].params.transform);
+        glViewport(0, 0, s.texture_.width(), s.texture_.height());
+        renderDirShadow(scene_.data_->models_, l.transform_);
+        renderDirShadow(scene_.data_->transparent_models_, l.transform_);
     }
-    for (size_t i = 0; i < sr.spot_.size(); ++i) {
-        sr.spot_[i].fb.bind();
+    for (size_t i = 0; i < MAX_SPOT_LIGHT; ++i) {
+        auto &l{ scene_.data_->lights_.spot_[i] };
+        if (l.shadow_.z == 0) {
+            continue;
+        }
+        auto &s{ shadow_maps_.spot_[i] };
+        s.fb_.bind();
         glClear(GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, sr.spot_[i].texture.width(), sr.spot_[i].texture.height());
-        renderDirShadow(sr.spot_[i].params.transform);
+        glViewport(0, 0, s.texture_.width(), s.texture_.height());
+        renderDirShadow(scene_.data_->models_, l.transform_);
+        renderDirShadow(scene_.data_->transparent_models_, l.transform_);
     }
-    for (size_t i = 0; i < sr.point_.size(); ++i) {
-        const auto &params = sr.point_[i].params;
-        sr.point_[i].fb.bind();
+    for (size_t i = 0; i < MAX_POINT_LIGHT; ++i) {
+        auto &l{ scene_.data_->lights_.point_[i] };
+        if (l.shadow_.z == 0) {
+            continue;
+        }
+        auto &s{ shadow_maps_.point_[i] };
+        s.fb_.bind();
         glClear(GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, sr.point_[i].texture.width(), sr.point_[i].texture.height());
-        renderOmniShadow(
-            params.transforms,
-            glm::vec3(params.position),
-            params.far_plane
-        );
+        glViewport(0, 0, s.texture_.width(), s.texture_.height());
+        const glm::vec3 light_pos{ l.position_ };
+        const float far_plane = l.attenuation_.w;
+        const auto transforms = calcPointLightSpaceTransforms(light_pos, 1.0f, far_plane);
+        renderOmniShadow(scene_.data_->models_, transforms.data(), light_pos, far_plane);
+        renderOmniShadow(scene_.data_->transparent_models_, transforms.data(), light_pos, far_plane);
     }
-    glCullFace(GL_BACK);
-    PipelineState::invalidate();
 }
 
 void Renderer::blitColorAttachment(
@@ -400,17 +423,16 @@ void Renderer::blurBrightPass(int width, int height)
         "tex_offset",
         glm::vec2(1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height))
     );
-    blur_shader.setInt("image", 0);
 
     bool horizontal = true;
     for (int i = 0; i < bloom_blur_iterations_ * 2; ++i) {
         // horizontal → blur FBO（读 resolve att1）；vertical → resolve att1（读 blur FBO）
         if (horizontal) {
             blur_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT0);
-            bright_color.bind(0);
+            bright_color.bind(BLOOM_IMAGE_UNIT);
         } else {
             resolve_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT1);
-            blur_color.bind(0);
+            blur_color.bind(BLOOM_IMAGE_UNIT);
         }
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -426,8 +448,6 @@ void Renderer::blurBrightPass(int width, int height)
 
 void Renderer::forwardPass()
 {
-    reallocFrameBuffers();
-
     const int width = std::get<2>(viewport_);
     const int height = std::get<3>(viewport_);
 
@@ -441,12 +461,10 @@ void Renderer::forwardPass()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    applySceneShadows();
     if (bloom_enabled_) {
         applyBloomThreshold();
     }
 
-    std::optional<GLuint> prev_shader_id;
     auto draw_model = [&](Model &model) {
         for (auto &object : model.objects_) {
             auto &program = object.render_shader_;
@@ -454,10 +472,7 @@ void Renderer::forwardPass()
                 continue;
             }
             object.pipeline_state_.apply();
-            if (!prev_shader_id || program.id() != *prev_shader_id) {
-                program.use();
-                prev_shader_id = program.id();
-            }
+            program.use();
             applyMaterial(object.material_, program);
             object.mesh_.draw(static_cast<GLsizei>(object.mesh_.instanceCount()));
         }
@@ -471,6 +486,12 @@ void Renderer::forwardPass()
         draw_model(*model);
     }
 
+    if (scene_.data_->skybox_) {
+        // skybox 只写 scene 颜色，不进 bloom 高光目标
+        hdr_framebuffer_.drawBuffer(GL_COLOR_ATTACHMENT0);
+        draw_model(*scene_.data_->skybox_);
+    }
+
     if (bloom_enabled_) {
         blitColorAttachment(
             hdr_framebuffer_, &resolve_framebuffer_,
@@ -482,6 +503,8 @@ void Renderer::forwardPass()
             GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT1,
             width, height, 0, 0, width, height
         );
+        blurBrightPass(std::get<2>(viewport_), std::get<3>(viewport_));
+        compositePass();
     } else {
         blitColorAttachment(
             hdr_framebuffer_, &composite_framebuffer_,
@@ -508,10 +531,8 @@ void Renderer::compositePass()
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    scene_color.bind(0);
-    bloom_color.bind(1);
-    composite_shader.setInt("scene", 0);
-    composite_shader.setInt("bloomBlur", 1);
+    scene_color.bind(COMPOSITE_SCENE_UNIT);
+    bloom_color.bind(COMPOSITE_BLOOM_UNIT);
     drawFullscreenQuad(composite_shader);
     FrameBuffer::unbind();
 }
@@ -533,8 +554,7 @@ void Renderer::postProcPass()
     );
     auto &quad_shader = post_proc_shader_.value();
 
-    composite_color.bind(0);
-    quad_shader.setInt("quad_texture", 0);
+    composite_color.bind(QUAD_TEXTURE_UNIT);
     quad_shader.setVec2(
         "tex_offset",
         glm::vec2(1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height))
@@ -550,78 +570,48 @@ void Renderer::postProcPass()
     FrameBuffer::unbind();
 }
 
-void Renderer::renderDirShadow(const glm::mat4 &light_space)
+
+void Renderer::renderDirShadow(const std::vector<Model> &models, const glm::mat4 &light_space)
 {
-    std::optional<GLuint> prev_shader_id;
-    auto draw_shadow_models = [&](std::vector<Model> &models) {
-        for (auto &model : models) {
-            for (auto &object : model.objects_) {
-                auto &shader = object.directional_shadow_shader_;
-                if (shader.id() == 0)
-                    continue;
-                if (!prev_shader_id || shader.id() != *prev_shader_id) {
-                    shader.setMat4("light_space_transform", light_space);
-                    shader.use();
-                    prev_shader_id = shader.id();
-                }
-                object.mesh_.draw(static_cast<GLsizei>(object.mesh_.instanceCount()));
-            }
-        }
-    };
-    draw_shadow_models(scene_.data_->models_);
-    draw_shadow_models(scene_.data_->transparent_models_);
+    for (auto &model : models) {
+        renderDirShadow(model, light_space);
+    }
 }
 
-void Renderer::renderOmniShadow(const glm::mat4 *light_spaces,
-                               const glm::vec3 &light_pos,
-                               float far_plane)
+void Renderer::renderDirShadow(const Model &model, const glm::mat4 &light_space)
 {
-    std::optional<GLuint> prev_shader_id;
-    auto draw_shadow_models = [&](std::vector<Model> &models) {
-        for (auto &model : models) {
-            for (auto &object : model.objects_) {
-                auto &shader = object.omni_shadow_shader_;
-                if (shader.id() == 0)
-                    continue;
-                if (!prev_shader_id || shader.id() != *prev_shader_id) {
-                    shader.setMat4Arr("light_space_transform", light_spaces, 6);
-                    shader.setVec3("light_pos", light_pos);
-                    shader.setFloat("far_plane", far_plane);
-                    shader.use();
-                    prev_shader_id = shader.id();
-                }
-                object.mesh_.draw(static_cast<GLsizei>(object.mesh_.instanceCount()));
-            }
-        }
-    };
-    draw_shadow_models(scene_.data_->models_);
-    draw_shadow_models(scene_.data_->transparent_models_);
+    for (auto &object : model.objects_) {
+        auto &shader = object.directional_shadow_shader_;
+        if (shader.id() == 0)
+            continue;
+        shader.setMat4("light_space_transform", light_space);
+        object.mesh_.draw(static_cast<GLsizei>(object.mesh_.instanceCount()));
+    }
+}
+void Renderer::renderOmniShadow(const std::vector<Model> &models, const glm::mat4 *light_spaces, const glm::vec3 &light_pos, float far_plane)
+{
+    for (auto &model : models) {
+        renderOmniShadow(model, light_spaces, light_pos, far_plane);
+    }
+}
+
+void Renderer::renderOmniShadow(const Model &model, const glm::mat4 *light_spaces, const glm::vec3 &light_pos, float far_plane)
+{
+    for (auto &object : model.objects_) {
+        auto &shader = object.omni_shadow_shader_;
+        if (shader.id() == 0)
+            continue;
+        shader.setMat4Arr("light_space_transform", light_spaces, 6);
+        shader.setVec3("light_pos", light_pos);
+        shader.setFloat("far_plane", far_plane);
+        object.mesh_.draw(static_cast<GLsizei>(object.mesh_.instanceCount()));
+    }
 }
 
 void Renderer::bindUniformBuffers() const
 {
     light_ubo_.bindBase(0);
     cam_data_ubo_.bindBase(1);
-}
-
-void Renderer::applySceneShadows()
-{
-    std::unordered_set<GLuint> applied_shader_ids;
-    auto apply_for_models = [&](std::vector<Model> &models) {
-        for (auto &model : models) {
-            for (auto &object : model.objects_) {
-                auto &program = object.render_shader_;
-                if (program.id() == 0) {
-                    continue;
-                }
-                if (applied_shader_ids.insert(program.id()).second) {
-                    applyShadow(shadow_resources_, program);
-                }
-            }
-        }
-    };
-    apply_for_models(scene_.data_->models_);
-    apply_for_models(scene_.data_->transparent_models_);
 }
 
 void Renderer::applyBloomThreshold()
@@ -644,117 +634,53 @@ void Renderer::applyBloomThreshold()
     apply_for_models(scene_.data_->transparent_models_);
 }
 
-void Renderer::applyShadow(const ShadowResources &shadow, ShaderProgram &shader, unsigned first_unit)
+void Renderer::applyShadow()
 {
-    shader.setUniformIfPresent("shadowMap.counts", glm::ivec4{
-        static_cast<int>(shadow.directional_.size()),
-        static_cast<int>(shadow.point_.size()),
-        static_cast<int>(shadow.spot_.size()),
-        0
-    });
-
-    unsigned unit = first_unit;
-    for (size_t i = 0; i < shadow.directional_.size(); ++i, ++unit) {
-        const auto &res = shadow.directional_[i];
-        const float texel = 1.0f / static_cast<float>(res.texture.width());
-        res.texture.bind(unit);
-        shader.setUniformIfPresent(std::format("shadowMap.directional[{}].map", i),
-                                   static_cast<int>(unit));
-        shader.setUniformIfPresent(std::format("shadowMap.directional[{}].transform", i),
-                                   res.params.transform);
-        shader.setUniformIfPresent(std::format("shadowMap.directional[{}].bias.min_bias", i),
-                                   res.params.bias.min_bias);
-        shader.setUniformIfPresent(std::format("shadowMap.directional[{}].bias.slope_bias", i),
-                                   res.params.bias.slope_bias);
-        shader.setUniformIfPresent(std::format("shadowMap.directional[{}].texel_size", i),
-                                   glm::vec2{ texel, texel });
+    for (GLuint i = 0; i < MAX_DIRECTIONAL_LIGHT; ++i) {
+        shadow_maps_.directional_[i].texture_.bind(DIR_LIGHT_START_UNIT + i);
     }
-    for (size_t i = 0; i < shadow.spot_.size(); ++i, ++unit) {
-        const auto &res = shadow.spot_[i];
-        const float texel = 1.0f / static_cast<float>(res.texture.width());
-        res.texture.bind(unit);
-        shader.setUniformIfPresent(std::format("shadowMap.spot[{}].map", i),
-                                   static_cast<int>(unit));
-        shader.setUniformIfPresent(std::format("shadowMap.spot[{}].transform", i),
-                                   res.params.transform);
-        shader.setUniformIfPresent(std::format("shadowMap.spot[{}].bias.min_bias", i),
-                                   res.params.bias.min_bias);
-        shader.setUniformIfPresent(std::format("shadowMap.spot[{}].bias.slope_bias", i),
-                                   res.params.bias.slope_bias);
-        shader.setUniformIfPresent(std::format("shadowMap.spot[{}].texel_size", i),
-                                   glm::vec2{ texel, texel });
+    for (GLuint i = 0; i < MAX_SPOT_LIGHT; ++i) {
+        shadow_maps_.spot_[i].texture_.bind(SPOT_LIGHT_START_UNIT + i);
     }
-    for (size_t i = 0; i < shadow.point_.size(); ++i, ++unit) {
-        const auto &res = shadow.point_[i];
-        const float texel = 1.0f / static_cast<float>(res.texture.width());
-        res.texture.bind(unit);
-        shader.setUniformIfPresent(std::format("shadowMap.point[{}].map", i),
-                                   static_cast<int>(unit));
-        shader.setUniformIfPresent(std::format("shadowMap.point[{}].bias.min_bias", i),
-                                   res.params.bias.min_bias);
-        shader.setUniformIfPresent(std::format("shadowMap.point[{}].bias.slope_bias", i),
-                                   res.params.bias.slope_bias);
-        shader.setUniformIfPresent(std::format("shadowMap.point[{}].far_plane", i),
-                                   res.params.far_plane);
-        shader.setUniformIfPresent(std::format("shadowMap.point[{}].texel_size", i),
-                                   glm::vec2{ texel, texel });
+    for (GLuint i = 0; i < MAX_POINT_LIGHT; ++i) {
+        shadow_maps_.point_[i].texture_.bind(POINT_LIGHT_START_UNIT + i);
     }
 }
 
-void Renderer::applyMaterial(const Material &material, ShaderProgram &program, unsigned first_unit)
+void Renderer::applyMaterial(const Material &material, ShaderProgram &program)
 {
-    unsigned bp = first_unit;
-
     if (material.quad_texture_) {
         if (const GLint loc = program.uniformLocation("quad_texture"); loc >= 0) {
-            material.quad_texture_->bind(bp);
-            program.setInt(loc, static_cast<int>(bp));
+            material.quad_texture_->bind(QUAD_TEXTURE_UNIT);
         }
         return;
     }
 
     if (const GLint loc = program.uniformLocation("skybox"); loc >= 0) {
         if (material.skybox_) {
-            material.skybox_->bind(bp);
-            program.setInt(loc, static_cast<int>(bp));
+            material.skybox_->bind(SKYBOX_UNIT);
         }
         return;
     }
 
     program.setUniformIfPresent("material.diffuse_exist", material.diffuse_.has_value());
     if (material.diffuse_) {
-        if (const GLint loc = program.uniformLocation("material.diffuse_texture"); loc >= 0) {
-            material.diffuse_->bind(bp);
-            program.setInt(loc, static_cast<int>(bp));
-            ++bp;
-        }
+        material.diffuse_->bind(DIFFUSE_UNIT);
     }
 
     program.setUniformIfPresent("material.specular_exist", material.specular_.has_value());
     if (material.specular_) {
-        if (const GLint loc = program.uniformLocation("material.specular_texture"); loc >= 0) {
-            material.specular_->bind(bp);
-            program.setInt(loc, static_cast<int>(bp));
-            ++bp;
-        }
+        material.specular_->bind(SPECULAR_UNIT);
     }
 
     program.setUniformIfPresent("material.normal_exist", material.normal_.has_value());
     if (material.normal_) {
-        if (const GLint loc = program.uniformLocation("material.normal_map"); loc >= 0) {
-            material.normal_->bind(bp);
-            program.setInt(loc, static_cast<int>(bp));
-            ++bp;
-        }
+        material.normal_->bind(NORMAL_UNIT);
     }
 
     program.setUniformIfPresent("material.height_exist", material.height_.has_value());
     if (material.height_) {
-        if (const GLint loc = program.uniformLocation("material.height_map"); loc >= 0) {
-            material.height_->bind(bp);
-            program.setInt(loc, static_cast<int>(bp));
-            ++bp;
-        }
+        material.height_->bind(HEIGHT_UNIT);
     }
     program.setUniformIfPresent("material.height_scale", material.height_scale_);
     program.setUniformIfPresent("material.shininess", material.shininess_);

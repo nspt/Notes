@@ -1,23 +1,36 @@
 #pragma once
 
 #include <map>
-#include <memory>
 #include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
 
 #include "../Scene/Scene.h"
-#include "../Scene/Shadow.h"
 #include "../Scene/Camera.h"
 #include "../FrameBuffer/FrameBuffer.h"
 #include "../Model/RenderObject.h"
 #include "ShaderProgram.h"
-#include "PipelineState.h"
 #include "../Buffers/UniformBuffer.h"
 
 class Renderer {
 public:
+    // lit / explode
+    static inline constexpr GLuint DIFFUSE_UNIT = 0;
+    static inline constexpr GLuint SPECULAR_UNIT = 1;
+    static inline constexpr GLuint NORMAL_UNIT = 2;
+    static inline constexpr GLuint HEIGHT_UNIT = 3;
+    static inline constexpr GLuint REFLECT_CUBE_UNIT = 4;
+    static inline constexpr GLuint REFRACT_CUBE_UNIT = 5;
+    static inline constexpr GLuint DIR_LIGHT_START_UNIT = 6;
+    static inline constexpr GLuint SPOT_LIGHT_START_UNIT = DIR_LIGHT_START_UNIT + MAX_DIRECTIONAL_LIGHT;
+    static inline constexpr GLuint POINT_LIGHT_START_UNIT = SPOT_LIGHT_START_UNIT + MAX_SPOT_LIGHT;
+    // 其它 pass 可复用低编号 unit（不同类型 shader）
+    static inline constexpr GLuint SKYBOX_UNIT = 0;
+    static inline constexpr GLuint BLOOM_IMAGE_UNIT = 0;
+    static inline constexpr GLuint COMPOSITE_SCENE_UNIT = 0;
+    static inline constexpr GLuint COMPOSITE_BLOOM_UNIT = 1;
+    static inline constexpr GLuint QUAD_TEXTURE_UNIT = 0;
     using ShaderMap = std::map<std::string, ShaderProgram>;
     struct PostProcParams {
         bool enable_kernel{ false };
@@ -67,18 +80,17 @@ public:
 
     void render();
 
-    static void applyShadow(const ShadowResources &shadow, ShaderProgram &shader, unsigned first_unit = 16);
-    static void applyMaterial(const Material &material, ShaderProgram &program, unsigned first_unit = 0);
+    void applyShadow();
+    void applyMaterial(const Material &material, ShaderProgram &shader);
 
 private:
-    void createFrameBuffers();
+    void initFrameBuffers();
     void reallocFrameBuffers();
     void bindFinalFrameBuffer() const;
     GLenum colorInternalFormat() const noexcept;
 
-    void createShadowResources(int shadow_map_size = 1024);
+    void initShadowResources();
     void bindUniformBuffers() const;
-    void applySceneShadows();
     void applyBloomThreshold();
 
     void shadowPass();
@@ -86,8 +98,10 @@ private:
     void compositePass();
     void postProcPass();
 
-    void renderDirShadow(const glm::mat4 &light_space);
-    void renderOmniShadow(const glm::mat4 *light_spaces, const glm::vec3 &light_pos, float far_plane);
+    void renderDirShadow(const std::vector<Model> &models, const glm::mat4 &light_space);
+    void renderDirShadow(const Model &model, const glm::mat4 &light_space);
+    void renderOmniShadow(const std::vector<Model> &models, const glm::mat4 *light_spaces, const glm::vec3 &light_pos, float far_plane);
+    void renderOmniShadow(const Model &model, const glm::mat4 *light_spaces, const glm::vec3 &light_pos, float far_plane);
 
     void blurBrightPass(int width, int height);
     void blitColorAttachment(FrameBuffer &src, FrameBuffer *dst,
@@ -102,7 +116,7 @@ private:
     CameraData camera_data_{};
     UniformBuffer cam_data_ubo_{ sizeof(CameraData) };
     UniformBuffer light_ubo_{ sizeof(LightData) };
-    ShadowResources shadow_resources_;
+    ShadowMaps shadow_maps_;
 
     std::tuple<int, int, int, int> viewport_{ 0, 0, 1, 1 };
 
@@ -118,10 +132,11 @@ private:
     std::optional<ShaderProgram> composite_shader_;
     std::optional<FrameBuffer> final_framebuffer_;
 
-    static ShaderMap shaders_;
-    static constexpr GLsizei hdr_samples_ = 4;
-    static constexpr int bloom_blur_iterations_ = 5;
     float bloom_threshold_{ 1.0f };
     bool hdr_enabled_{ true };
     bool bloom_enabled_{ true };
+
+    static ShaderMap shaders_;
+    static constexpr GLsizei hdr_samples_ = 4;
+    static constexpr int bloom_blur_iterations_ = 5;
 };

@@ -10,7 +10,7 @@ public:
                    GLenum type = GL_UNSIGNED_BYTE);
     explicit TextureCubeMap(const std::vector<std::string>& paths, bool flipVertically = true, bool srgb = true);
 
-private:
-    void init(const std::vector<void*> faces, int width, int height,
-              GLenum internalFormat, GLenum format, GLenum type = GL_UNSIGNED_BYTE) noexcept;
+    void generateMipmap() const;
+    void reallocate(const std::vector<void*> faces, int width, int height,
+                    GLenum internalFormat, GLenum format, GLenum type = GL_UNSIGNED_BYTE);
 };

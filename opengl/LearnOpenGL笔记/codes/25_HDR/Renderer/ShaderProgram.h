@@ -64,8 +64,8 @@ public:
         }
         if constexpr (std::is_same_v<T, bool>) {
             setBool(location, value);
-        } else if constexpr (std::is_same_v<T, int>) {
-            setInt(location, value);
+        } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, GLuint>) {
+            setInt(location, static_cast<int>(value));
         } else if constexpr (std::is_same_v<T, float>) {
             setFloat(location, value);
         } else if constexpr (std::is_same_v<T, glm::vec2>) {

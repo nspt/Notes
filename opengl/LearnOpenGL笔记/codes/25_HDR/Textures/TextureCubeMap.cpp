@@ -59,23 +59,30 @@ TextureCubeMap::TextureCubeMap(const vector<string>& paths, bool flipVertically,
     for (auto &f : face_imgs) {
         faces.push_back(f.get());
     }
-    init(faces, width, height, internalFormat, format);
+    reallocate(faces, width, height, internalFormat, format);
+    generateMipmap();
 }
 
 TextureCubeMap::TextureCubeMap(int width, int height, GLenum internalFormat, GLenum format, GLenum type)
     : Texture{ GL_TEXTURE_CUBE_MAP }
 {
-    init({}, width, height, internalFormat, format, type);
+    reallocate({}, width, height, internalFormat, format, type);
 }
 
-void TextureCubeMap::init(const std::vector<void*> faces, int width, int height,
-                          GLenum internalFormat, GLenum format, GLenum type) noexcept
+void TextureCubeMap::generateMipmap() const
+{
+    bind(0);
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+}
+
+void TextureCubeMap::reallocate(const std::vector<void*> faces, int width, int height,
+                                GLenum internalFormat, GLenum format, GLenum type)
 {
     prop_->width_ = width;
     prop_->height_ = height;
-    prop_->format_ = format;
+    prop_->format_ = internalFormat;
 
-    glBindTexture(GL_TEXTURE_CUBE_MAP, prop_->id_);
+    bind(0);
 
     const unsigned face_count = faces.empty() ? 6u : static_cast<unsigned>(faces.size());
     for (unsigned int i = 0; i < face_count; i++) {
@@ -85,9 +92,4 @@ void TextureCubeMap::init(const std::vector<void*> faces, int width, int height,
             0, internalFormat, width, height, 0, format, type, data
         );
     }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); 
 }

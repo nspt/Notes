@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,6 +29,35 @@
 #include "../Textures/TextureCubeMap.h"
 
 
+inline void bindLitSamplerUnits(ShaderProgram &shader)
+{
+    shader.setUniformIfPresent("material.diffuse_texture", Renderer::DIFFUSE_UNIT);
+    shader.setUniformIfPresent("material.specular_texture", Renderer::SPECULAR_UNIT);
+    shader.setUniformIfPresent("material.normal_map", Renderer::NORMAL_UNIT);
+    shader.setUniformIfPresent("material.height_map", Renderer::HEIGHT_UNIT);
+    shader.setUniformIfPresent("material.reflect_cube_texture", Renderer::REFLECT_CUBE_UNIT);
+    shader.setUniformIfPresent("material.refract_cube_texture", Renderer::REFRACT_CUBE_UNIT);
+
+    for (GLuint i = 0; i < MAX_DIRECTIONAL_LIGHT; ++i) {
+        shader.setUniformIfPresent(
+            std::format("directional_shadow_map[{}]", i),
+            Renderer::DIR_LIGHT_START_UNIT + i
+        );
+    }
+    for (GLuint i = 0; i < MAX_SPOT_LIGHT; ++i) {
+        shader.setUniformIfPresent(
+            std::format("spot_shadow_map[{}]", i),
+            Renderer::SPOT_LIGHT_START_UNIT + i
+        );
+    }
+    for (GLuint i = 0; i < MAX_POINT_LIGHT; ++i) {
+        shader.setUniformIfPresent(
+            std::format("point_shadow_map[{}]", i),
+            Renderer::POINT_LIGHT_START_UNIT + i
+        );
+    }
+}
+
 inline Renderer::ShaderMap loadShaders(const std::string &resourceDir, const std::string &shaderSubDir)
 {
     Renderer::ShaderMap shaders;
@@ -47,6 +77,7 @@ inline Renderer::ShaderMap loadShaders(const std::string &resourceDir, const std
         shaderPath("lit.frag"));
     shaders.at("lit").setUniformBlockBinding("LightData", 0);
     shaders.at("lit").setUniformBlockBinding("CamData", 1);
+    bindLitSamplerUnits(shaders.at("lit"));
 
     add("shadow",
         shaderPath("shadow.vert"),
@@ -70,6 +101,7 @@ inline Renderer::ShaderMap loadShaders(const std::string &resourceDir, const std
         shaderPath("explode.geom"));
     shaders.at("explode").setUniformBlockBinding("LightData", 0);
     shaders.at("explode").setUniformBlockBinding("CamData", 1);
+    bindLitSamplerUnits(shaders.at("explode"));
 
     add("explode_shadow",
         shaderPath("shadow_explode.vert"),
@@ -80,19 +112,23 @@ inline Renderer::ShaderMap loadShaders(const std::string &resourceDir, const std
         shaderPath("skybox.vert"),
         shaderPath("skybox.frag"));
     shaders.at("skybox").setUniformBlockBinding("CamData", 1);
-    shaders.at("skybox").setInt("skybox", 0);
+    shaders.at("skybox").setInt("skybox", Renderer::SKYBOX_UNIT);
 
     add("blur",
         shaderPath("blur.vert"),
         shaderPath("blur.frag"));
+    shaders.at("blur").setInt("image", Renderer::BLOOM_IMAGE_UNIT);
 
     add("composite",
         shaderPath("composite.vert"),
         shaderPath("composite.frag"));
+    shaders.at("composite").setInt("scene", Renderer::COMPOSITE_SCENE_UNIT);
+    shaders.at("composite").setInt("bloomBlur", Renderer::COMPOSITE_BLOOM_UNIT);
 
     add("quad",
         shaderPath("quad.vert"),
         shaderPath("quad.frag"));
+    shaders.at("quad").setInt("quad_texture", Renderer::QUAD_TEXTURE_UNIT);
     return shaders;
 }
 

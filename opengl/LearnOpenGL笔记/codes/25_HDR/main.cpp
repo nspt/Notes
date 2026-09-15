@@ -26,18 +26,18 @@ constexpr float kSpotLightMarkerScale = 0.3f;
 LightData createLightData()
 {
     LightData lights;
-    lights.counts.x = 1;
-    lights.directional[0].direction_ = glm::normalize(glm::vec4{ 0.0f, -1.0f, 0.0f, 0.0f });
-    lights.directional[0].ambient_ = glm::vec4{ 0.05f };
-    lights.directional[0].diffuse_ = glm::vec4{ 0.8f };
-    lights.directional[0].specular_ = glm::vec4{ 1.0f };
+    lights.counts_.x = 1;
+    lights.directional_[0].direction_ = glm::normalize(glm::vec4{ 0.0f, -1.0f, 0.0f, 0.0f });
+    lights.directional_[0].ambient_ = glm::vec4{ 0.05f };
+    lights.directional_[0].diffuse_ = glm::vec4{ 0.8f };
+    lights.directional_[0].specular_ = glm::vec4{ 1.0f };
 
     // 高亮白光在容器远端；其余彩色点光分布在它与原点之间，xy∈[-1,1]
-    lights.point[0].pos_ = glm::vec4{ 0.0f, 0.0f, -9.8f, 1.0f };
-    lights.point[0].ambient_ = glm::vec4{ 0.05f };
-    lights.point[0].diffuse_ = glm::vec4{ 100.0f };
-    lights.point[0].specular_ = glm::vec4{ 100.0f };
-    lights.point[0].attenuation = glm::vec4{ 1.0f, 0.09f, 0.032f, 0.0f };
+    lights.point_[0].position_ = glm::vec4{ 0.0f, 0.0f, -9.8f, 1.0f };
+    lights.point_[0].ambient_ = glm::vec4{ 0.05f };
+    lights.point_[0].diffuse_ = glm::vec4{ 100.0f };
+    lights.point_[0].specular_ = glm::vec4{ 100.0f };
+    lights.point_[0].attenuation_ = glm::vec4{ 1.0f, 0.09f, 0.032f, 0.0f };
 
     const glm::vec4 attenuation{ 1.0f, 0.09f, 0.032f, 0.0f };
     const struct {
@@ -51,14 +51,14 @@ LightData createLightData()
         { { -0.5f, -0.6f,  -9.5f }, { 1.0f, 0.85f, 0.1f }, 10.0f }, // 黄
     };
     auto colored_points_count = sizeof(colored_points) / sizeof(colored_points[0]);
-    lights.counts.y = colored_points_count + 1;
+    lights.counts_.y = colored_points_count + 1;
     for (int i = 0; i < colored_points_count; ++i) {
         const auto &p = colored_points[i];
-        lights.point[i + 1].pos_ = glm::vec4{ p.pos, 1.0f };
-        lights.point[i + 1].ambient_ = glm::vec4{ 0.0f };
-        lights.point[i + 1].diffuse_ = glm::vec4{ p.color * p.intensity, 1.0f };
-        lights.point[i + 1].specular_ = glm::vec4{ p.color * p.intensity, 1.0f };
-        lights.point[i + 1].attenuation = attenuation;
+        lights.point_[i + 1].position_ = glm::vec4{ p.pos, 1.0f };
+        lights.point_[i + 1].ambient_ = glm::vec4{ 0.0f };
+        lights.point_[i + 1].diffuse_ = glm::vec4{ p.color * p.intensity, 1.0f };
+        lights.point_[i + 1].specular_ = glm::vec4{ p.color * p.intensity, 1.0f };
+        lights.point_[i + 1].attenuation_ = attenuation;
     }
     return lights;
 }
@@ -66,8 +66,8 @@ LightData createLightData()
 InstanceBuffer::InstanceData spotMarkerInstance(const SpotLight &spot)
 {
     InstanceBuffer::InstanceData instance;
-    instance.translation_ = glm::vec3(spot.pos_);
-    const glm::vec3 direction{ spot.direction_inner_ };
+    instance.translation_ = glm::vec3(spot.position_);
+    const glm::vec3 direction{ spot.direction_ };
     const float yaw = std::atan2(direction.x, direction.z);
     const float horizontal = std::hypot(direction.x, direction.z);
     const float pitch = std::atan2(-direction.y, horizontal);
@@ -82,26 +82,26 @@ std::vector<Model> createLightMarkers(Renderer &renderer, Scene scene, const std
     std::vector<Model> models;
     const auto &lights = scene.data_->lights_;
 
-    for (int i = 0; i < lights.counts.y; ++i) {
+    for (int i = 0; i < lights.counts_.y; ++i) {
         Material material;
         material.pure_color_ = true;
-        material.color_ = glm::vec3(lights.point[i].diffuse_);
+        material.color_ = glm::vec3(lights.point_[i].diffuse_);
 
         Model marker{ RenderObject{
             material, createCubeMesh(),
             renderer.shader("lit"), ShaderProgram{}, ShaderProgram{}
         } };
         marker.setInstances(InstanceBuffer::InstanceData{
-            .translation_ = glm::vec3(lights.point[i].pos_),
+            .translation_ = glm::vec3(lights.point_[i].position_),
             .scale_ = glm::vec3{ kPointLightMarkerScale }
         });
         marker.update_action_ = [scene, i](Model &self, auto, auto) {
-            if (i >= scene.data_->lights_.counts.y) {
+            if (i >= scene.data_->lights_.counts_.y) {
                 return;
             }
-            const auto &pl = scene.data_->lights_.point[i];
+            const auto &pl = scene.data_->lights_.point_[i];
             self.setInstances(InstanceBuffer::InstanceData{
-                .translation_ = glm::vec3(pl.pos_),
+                .translation_ = glm::vec3(pl.position_),
                 .scale_ = glm::vec3{ kPointLightMarkerScale }
             });
             for (auto &o : self.objects_) {
@@ -111,20 +111,20 @@ std::vector<Model> createLightMarkers(Renderer &renderer, Scene scene, const std
         models.push_back(std::move(marker));
     }
 
-    if (lights.counts.z > 0) {
+    if (lights.counts_.z > 0) {
         Model flashlight{
             resourceDir + "/model/flash_light", "Flashlight.obj",
             renderer.shader("lit"), ShaderProgram{}, ShaderProgram{}, false
         };
 
-        for (int i = 0; i < lights.counts.z; ++i) {
+        for (int i = 0; i < lights.counts_.z; ++i) {
             Model marker = flashlight;
-            marker.setInstances(spotMarkerInstance(lights.spot[i]));
+            marker.setInstances(spotMarkerInstance(lights.spot_[i]));
             marker.update_action_ = [scene, i](Model &self, auto, auto) {
-                if (i >= scene.data_->lights_.counts.z) {
+                if (i >= scene.data_->lights_.counts_.z) {
                     return;
                 }
-                self.setInstances(spotMarkerInstance(scene.data_->lights_.spot[i]));
+                self.setInstances(spotMarkerInstance(scene.data_->lights_.spot_[i]));
             };
             models.push_back(std::move(marker));
         }
@@ -150,7 +150,7 @@ Scene createScene(Renderer &renderer, const std::string &resourceDir)
         std::make_move_iterator(markers.end())
     );
 
-    scene.data_->models_.push_back(createDefaultSkybox(renderer, resourceDir));
+    scene.data_->skybox_ = createDefaultSkybox(renderer, resourceDir);
     return scene;
 }
 

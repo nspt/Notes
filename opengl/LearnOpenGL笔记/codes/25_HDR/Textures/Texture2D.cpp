@@ -37,13 +37,14 @@ Texture2D::Texture2D(const std::string& path, bool flipVertically, bool srgb)
     } else {
         throw std::runtime_error("Unsupported texture channel count: " + std::to_string(channel));
     }
-    init(data.get(), width, height, internalFormat, format);
+    reallocate(width, height, internalFormat, format, data.get());
+    generateMipmap();
 }
 
 Texture2D::Texture2D(int width, int height, GLenum internalFormat, GLenum format, void *data, GLenum type)
     : Texture{ GL_TEXTURE_2D }
 {
-    init(data, width, height, internalFormat, format, type);
+    reallocate(width, height, internalFormat, format, data, type);
 }
 
 void Texture2D::generateMipmap() const
@@ -63,20 +64,4 @@ void Texture2D::reallocate(int width, int height, GLenum internalFormat, GLenum 
         prop_->format_, prop_->width_, prop_->height_, 0,
         format, type, data
     );
-}
-
-void Texture2D::init(void *data, int width, int height, GLenum internalFormat, GLenum format, GLenum type) noexcept
-{
-    prop_->width_ = width;
-    prop_->height_ = height;
-    prop_->format_ = internalFormat;
-
-    glBindTexture(GL_TEXTURE_2D, prop_->id_);
-
-    glTexImage2D(GL_TEXTURE_2D, 0,
-        prop_->format_, prop_->width_, prop_->height_, 0,
-        format, type, data
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
