@@ -1,0 +1,6 @@
+# VSCode / Cursor
+.vscode/
+
+# clangd / tooling
+.cache/
+.clangd

@@ -32,11 +32,10 @@ Makefile
 # =========================
 
 # VSCode / Cursor
-.vscode/*
+.vscode/
 
-# Keep shared workspace settings if desired
-!.vscode/settings.json
-!.vscode/extensions.json
+# Temporary / scratch
+tmp_layout.cpp
 
 # clangd
 .clangd
