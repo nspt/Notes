@@ -154,6 +154,32 @@ Scene createScene(Renderer &renderer, const std::string &resourceDir)
         std::make_move_iterator(markers.end())
     );
 
+    // 容器半尺寸 (1, 1, 10)；玻璃贴在外侧
+    const glm::quat face_neg_x = glm::angleAxis(glm::radians(-90.0f), glm::vec3{ 0.0f, 1.0f, 0.0f });
+    const glm::quat face_pos_x = glm::angleAxis(glm::radians(90.0f), glm::vec3{ 0.0f, 1.0f, 0.0f });
+    const glm::vec3 window_scale{ 0.7f, 0.7f, 1.0f };
+    const struct {
+        glm::vec3 translation;
+        glm::quat rotation;
+    } glasses[] = {
+        { {  0.0f, 0.0f,  11.2f }, glm::quat{} },      // +Z 端外
+        { {  1.4f, 0.0f,   4.0f }, face_neg_x },       // +X 侧外
+        { { -1.4f, 0.0f,   2.0f }, face_pos_x },       // -X 侧外
+        { {  1.4f, 0.0f,  -3.0f }, face_neg_x },
+        { {  0.0f, 0.0f, -11.2f }, glm::angleAxis(glm::radians(180.0f), glm::vec3{ 0.0f, 1.0f, 0.0f }) },
+    };
+    Model glass_proto = createGlassWindow(resourceDir);
+    glass_proto.draw_request_.cast_shadow = false;
+    for (const auto &g : glasses) {
+        Model glass = glass_proto;
+        glass.setInstances(InstanceBuffer::InstanceData{
+            .translation_ = g.translation,
+            .rotation_ = g.rotation,
+            .scale_ = window_scale
+        });
+        scene.data_->transparent_models_.push_back(std::move(glass));
+    }
+
     scene.data_->skybox_ = Skybox{
         {
             resourceDir + "/textures/skybox/right.jpg",
